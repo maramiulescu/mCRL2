@@ -653,6 +653,9 @@ class pbessolvesymbolic_tool: public parallel_tool<rewriter_tool<input_output_to
             if (!original_pbes_file.empty())
             {
               pbes_system::pbes original_pbes = pbes_system::detail::load_pbes(original_pbes_file);
+              // Convert the original to pre-SRF to match the pbes used in the first solving. 
+              pbes_system::srf_pbes_with_ce pre_srf_pbes = preprocess(original_pbes, options_);
+              original_pbes = pre_srf_pbes.to_pbes();
               R = mcrl2::pbes_system::detail::construct_R(pbesspec, original_pbes);
               mCRL2log(log::verbose) << "Using provided custom PBES for the second round of solving." << std::endl;
               pbes_system::detail::replace_global_variables(original_pbes, sigma);
