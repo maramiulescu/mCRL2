@@ -350,8 +350,8 @@ private:
   {
     bool operator()(char const& c1, char const& c2) const
     {
-      char c1u = toupper(c1);
-      char c2u = toupper(c2);
+      char c1u = static_cast<char>(toupper(c1));
+      char c2u = static_cast<char>(toupper(c2));
 
       return c1u < c2u || (c1u == c2u && c2 < c1);
     }
@@ -1173,11 +1173,9 @@ public:
   /// \overload
   inline bool validate(std::string const& s) const override
   {
-    for (typename std::vector<basic_argument::argument_description>::const_iterator i = m_enum.begin();
-      i != m_enum.end();
-      ++i)
+    for (const auto& i: m_enum)
     {
-      if (i->get_long() == s || i->get_short() == s)
+      if (i.get_long() == s || i.get_short() == s)
       {
         std::istringstream test(s);
         T result;

@@ -12,6 +12,7 @@
 
 #include "mcrl2/gui/arcball.h"
 #include "mcrl2/gui/glu.h"
+#include <array>
 
 #include "icons/zoom_cursor.xpm"
 #include "icons/pan_cursor.xpm"
@@ -27,9 +28,9 @@ LtsCanvas::LtsCanvas(QWidget* parent, Settings* settings, LtsManager* ltsManager
   m_dragging(false)
 {
   m_selectCursor = QCursor(Qt::ArrowCursor);
-  m_panCursor = QCursor(QPixmap(pan_cursor));
-  m_zoomCursor = QCursor(QPixmap(zoom_cursor));
-  m_rotateCursor = QCursor(QPixmap(rotate_cursor));
+  m_panCursor = QCursor(QPixmap(&pan_cursor[0]));
+  m_zoomCursor = QCursor(QPixmap(&zoom_cursor[0]));
+  m_rotateCursor = QCursor(QPixmap(&rotate_cursor[0]));
 
   connect(m_visualizer, SIGNAL(dirtied()), this, SLOT(update()));
   connect(m_ltsManager, SIGNAL(clusterPositionsChanged()), this, SLOT(clusterPositionsChanged()));
@@ -112,11 +113,11 @@ void LtsCanvas::setActiveTool(Tool tool)
 
 void LtsCanvas::initializeGL()
 {
-  GLfloat gray[] = { 0.35f, 0.35f, 0.35f, 1.0f };
-  GLfloat light_pos[] = { 50.0f, 50.0f, 50.0f, 1.0f };
-  glLightfv(GL_LIGHT0, GL_AMBIENT, gray);
-  glLightfv(GL_LIGHT0, GL_DIFFUSE, gray);
-  glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
+  std::array<GLfloat, 4> gray = { 0.35f, 0.35f, 0.35f, 1.0f };
+  std::array<GLfloat, 4> light_pos = { 50.0f, 50.0f, 50.0f, 1.0f };
+  glLightfv(GL_LIGHT0, GL_AMBIENT, gray.data());
+  glLightfv(GL_LIGHT0, GL_DIFFUSE, gray.data());
+  glLightfv(GL_LIGHT0, GL_POSITION, light_pos.data());
 
   glEnable(GL_NORMALIZE);
   glEnable(GL_LIGHTING);
@@ -127,8 +128,8 @@ void LtsCanvas::initializeGL()
   glBlendFunc(GL_ONE, GL_ZERO);
   glDisable(GL_BLEND);
 
-  GLfloat light_col[] = { 0.2f, 0.2f, 0.2f };
-  glMaterialfv(GL_FRONT, GL_SPECULAR, light_col);
+  std::array<GLfloat, 3> light_col = { 0.2f, 0.2f, 0.2f };
+  glMaterialfv(GL_FRONT, GL_SPECULAR, light_col.data());
   glMaterialf(GL_FRONT, GL_SHININESS, 8.0f);
   glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
   glEnable(GL_COLOR_MATERIAL);
@@ -164,9 +165,9 @@ void LtsCanvas::render(bool light)
   glDepthFunc(GL_LESS);
 
   glClearColor(
-    m_settings->backgroundColor.value().red() / 255.0,
-    m_settings->backgroundColor.value().green() / 255.0,
-    m_settings->backgroundColor.value().blue() / 255.0,
+    static_cast<GLfloat>(m_settings->backgroundColor.value().red() / 255.0),
+    static_cast<GLfloat>(m_settings->backgroundColor.value().green() / 255.0),
+    static_cast<GLfloat>(m_settings->backgroundColor.value().blue() / 255.0),
     1.0f
   );
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -278,8 +279,8 @@ void LtsCanvas::render(bool light)
     glTranslatef(0.0f, 0.0f, halfHeight);
     mcrl2::gui::applyRotation(m_rotation, /*reverse=*/true);
     glTranslatef(-m_position.x(), -m_position.y(), -m_position.z() + m_baseDepth);
-    GLfloat matrix[16];
-    glGetFloatv(GL_MODELVIEW_MATRIX, matrix);
+    std::array<GLfloat, 16> matrix;
+    glGetFloatv(GL_MODELVIEW_MATRIX, matrix.data());
     QVector3D viewpoint = QVector3D(matrix[12], matrix[13], matrix[14]);
     glPopMatrix();
     // sort clusters on distance to viewpoint
@@ -369,8 +370,8 @@ void LtsCanvas::mouseMoveEvent(QMouseEvent* event)
   if (m_activeTool == PanTool)
   {
     m_position += QVector3D(
-      -0.0015f * (m_baseDepth - m_position.z()) * (oldPosition.x() - event->position().x()),
-       0.0015f * (m_baseDepth - m_position.z()) * (oldPosition.y() - event->position().y()),
+      static_cast<float>(-0.0015f * (m_baseDepth - m_position.z()) * (oldPosition.x() - event->position().x())),
+       static_cast<float>(0.0015f * (m_baseDepth - m_position.z()) * (oldPosition.y() - event->position().y())),
        0.0f
     );
     event->accept();
@@ -381,7 +382,7 @@ void LtsCanvas::mouseMoveEvent(QMouseEvent* event)
     m_position += QVector3D(
       0.0f,
       0.0f,
-      0.01f * (m_baseDepth - m_position.z()) * (oldPosition.y() - event->position().y())
+      static_cast<float>(0.01f * (m_baseDepth - m_position.z()) * (oldPosition.y() - event->position().y()))
     );
     event->accept();
     update();
@@ -396,7 +397,7 @@ void LtsCanvas::mouseMoveEvent(QMouseEvent* event)
 
 void LtsCanvas::wheelEvent(QWheelEvent* event)
 {
-  m_position += QVector3D(0.0f, 0.0f, 0.001f * (m_baseDepth - m_position.z()) * event->angleDelta().y());
+  m_position += QVector3D(0.0f, 0.0f, 0.001f * (m_baseDepth - m_position.z()) * static_cast<float>(event->angleDelta().y()));
   event->accept();
   update();
 }
@@ -425,9 +426,9 @@ LtsCanvas::Selection LtsCanvas::selectObject(QPoint position)
   glLoadIdentity();
   glViewport(0, 0, m_width, m_height);
 
-  GLint viewport[4];
-  glGetIntegerv(GL_VIEWPORT, viewport);
-  gluPickMatrix((GLdouble)position.x(), (GLdouble)(viewport[3] - position.y()), 3.0, 3.0, viewport);
+  std::array<GLint, 4> viewport;
+  glGetIntegerv(GL_VIEWPORT, viewport.data());
+  gluPickMatrix((GLdouble)position.x(), (GLdouble)(viewport[3] - position.y()), 3.0, 3.0, viewport.data());
 
   gluPerspective(60.0f, (GLfloat)m_width / (GLfloat)m_height, m_nearPlane, m_farPlane);
 
@@ -460,7 +461,7 @@ LtsCanvas::Selection LtsCanvas::parseSelection(GLuint* selectionBuffer, GLint it
   float minimumStateDepth = -1;
   int stateID = -1;
 
-  float clusterFound = false;
+  bool clusterFound = false;
   float minimumClusterDepth = -1;
   int rank = -1;
   int position = -1;
@@ -478,7 +479,7 @@ LtsCanvas::Selection LtsCanvas::parseSelection(GLuint* selectionBuffer, GLint it
       continue;
     }
 
-    GLuint itemData[3] = {0, 0, 0};
+    std::array<GLuint, 3> itemData = {0, 0, 0};
     for (GLuint j = 0; j < size; j++)
     {
       itemData[j] = *buffer++;
@@ -506,8 +507,8 @@ LtsCanvas::Selection LtsCanvas::parseSelection(GLuint* selectionBuffer, GLint it
   }
 
   Selection output;
-  output.state = 0;
-  output.cluster = 0;
+  output.state = nullptr;
+  output.cluster = nullptr;
 
   if (stateFound)
   {

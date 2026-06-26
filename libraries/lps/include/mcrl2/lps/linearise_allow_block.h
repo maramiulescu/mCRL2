@@ -13,10 +13,12 @@
 #define MCRL2_LPS_LINEARISE_ALLLOW_BLOCK_H
 
 #include "mcrl2/atermpp/aterm_list.h"
+#include "mcrl2/core/identifier_string.h"
 #include "mcrl2/lps/deadlock_summand.h"
 #include "mcrl2/lps/detail/configuration.h"
 #include "mcrl2/lps/linearise_utility.h"
 #include "mcrl2/lps/stochastic_action_summand.h"
+#include "mcrl2/process/action_name_multiset.h"
 #include "mcrl2/process/process_expression.h"
 
 namespace mcrl2::lps
@@ -62,84 +64,72 @@ inline std::string log_allow_block_application(const lps_statistics_t& lps_stati
 
 /**************** allow/block *************************************/
 
-/// Determine if allow_action allows multi_action.
-///
-/// \param allow_action A sorted action_name_multiset a1|...|an
-/// \param multi_action A multiaction b1(d1)|...|bm(dm)
-/// \param termination_action The action that encodes successful termination (used only in debug mode)
-/// \returns n == m and ai == bi for 1 <= i <= n
-inline bool allow_(const process::action_name_multiset& allow_action,
-    const process::action_list& multi_action,
-    [[maybe_unused]]
-    const process::action&  termination_action)
+namespace detail
 {
-  /* The special cases where multiaction==tau and multiaction=={ Terminated } must have been
-     dealt with separately. */
-  assert(!multi_action.empty());
-  assert(multi_action != process::action_list({termination_action}));
-  assert(std::is_sorted(allow_action.names().begin(), allow_action.names().end(), process::action_name_compare()));
-  assert(std::is_sorted(multi_action.begin(), multi_action.end(), process::action_compare()));
+/// Cache for the allowed actions
+/// The cache is used to avoid linear searches in the allow list.
+using allow_list_cache = std::unordered_set<core::identifier_string_list>;
 
-  const core::identifier_string_list& names = allow_action.names();
-  // Note: names.size() and multi_action.size() are O(n) operations, so
-  // optimizing them as special case is not helpful.
-  // if (names.size() != multi_action.size())
-  // {
-  //   return false;
-  // }
-
-  core::identifier_string_list::const_iterator names_it = names.begin();
-  process::action_list::const_iterator multiaction_it = multi_action.begin();
-
-  while (names_it != names.end() && multiaction_it != multi_action.end())
+/// Calculate the allow_list_cache from the allow_list.
+/// This is used to speed up the lookups when determining is a multi-action is allowed.
+inline
+allow_list_cache make_allow_list_cache(const process::action_name_multiset_list& allowlist)
+{
+  allow_list_cache result;
+  for (const process::action_name_multiset& allow_action : allowlist)
   {
-    if (*names_it != multiaction_it->label().name())
-    {
-      return false;
-    }
-    ++names_it;
-    ++multiaction_it;
+    assert(std::is_sorted(allow_action.names().begin(), allow_action.names().end(), process::action_name_compare()));
+    result.insert(allow_action.names());
   }
+  return result;
+}
 
-  return names_it == names.end() && multiaction_it == multi_action.end();
+/// Calculate the list of action names that appear in a multi-action.
+inline
+core::identifier_string_list names(const process::action_list& multi_action)
+{
+  return core::identifier_string_list(
+    multi_action.begin(),
+    multi_action.end(),
+    [](const process::action& a)
+    {
+      return a.label().name();
+    });
+}
 }
 
 /// \brief Determine if multi_action is allowed by an allow expression in allow_list
 ///
 /// Calculates if the names of the action in multi_action match with an expression in allow_list.
 /// If multi_action is the termination action, or multi_action is the empty multiaction, the result is also true.
-inline bool allow_(const process::action_name_multiset_list& allow_list,
+inline bool allow_(const detail::allow_list_cache& allow_cache,
     const process::action_list& multi_action,
     const process::action& termination_action)
 {
+  assert(std::is_sorted(multi_action.begin(), multi_action.end(), process::action_compare()));
+
   // The empty multiaction and the termination action can never be blocked by allows.
   if (multi_action.empty() || multi_action == process::action_list({termination_action}))
   {
     return true;
   }
 
-  for (const process::action_name_multiset& allow_action : allow_list)
-  {
-    if (allow_(allow_action, multi_action, termination_action))
-    {
-      return true;
-    }
-  }
-  return false;
+  const core::identifier_string_list multi_action_names = detail::names(multi_action);
+  return allow_cache.find(multi_action_names) != allow_cache.end();
 }
 
 /// \brief Calculate if any of the actions in multiaction is blocked by encap_list.
 ///
-/// \param encap_list is a list of action_name_multisets of size 1. Its single element contains all the blocked actions.
+/// \param blocked_actions is a list of action names that are blocked.
 /// \param multi_action contains a multiaction a1(d1)|...|an(dn)
 /// \returns \exists i: ai \in encap_list
-inline bool encap(const process::action_name_multiset_list& encaplist, const process::action_list& multiaction)
+template <typename Container>
+bool encap(const Container& blocked_actions, const process::action_list& multiaction)
 {
-  assert(encaplist.size() == 1);
-  assert(std::is_sorted(multiaction.begin(), multiaction.end(), process::action_compare()));
+  static_assert(std::is_same_v<typename Container::value_type, core::identifier_string>, "Container must contain core::identifier_string");
 
-  const core::identifier_string_list& blocked_actions = encaplist.front().names();
   assert(std::is_sorted(blocked_actions.begin(), blocked_actions.end(), process::action_name_compare()));
+  assert(std::is_sorted(multiaction.begin(), multiaction.end(), process::action_compare()));
 
   core::identifier_string_list::const_iterator blocked_actions_it = blocked_actions.begin();
   process::action_list::const_iterator multiaction_it = multiaction.begin();
@@ -165,6 +155,20 @@ inline bool encap(const process::action_name_multiset_list& encaplist, const pro
   }
 
   return false;
+}
+
+/// \brief Calculate if any of the actions in multiaction is blocked by encap_list.
+///
+/// \param encap_list is a list of action_name_multisets of size 1. Its single element contains all the blocked actions.
+/// \param multi_action contains a multiaction a1(d1)|...|an(dn)
+/// \returns \exists i: ai \in encap_list
+inline bool encap(const process::action_name_multiset_list& encaplist, const process::action_list& multiaction)
+{
+  assert(encaplist.size() == 1);
+  assert(std::is_sorted(multiaction.begin(), multiaction.end(), process::action_compare()));
+
+  const core::identifier_string_list& blocked_actions = encaplist.front().names();
+  return encap(blocked_actions, multiaction);
 }
 
 /// Calculate the application of the allow or block operator over the action
@@ -221,6 +225,13 @@ inline void allowblockcomposition(
                                   << " delta summands";
   }
 
+  /// Cache the list of allowed actions, to avoid linear searches in the allow list.
+  detail::allow_list_cache allow_cache;
+  if (is_allow)
+  {
+    allow_cache = detail::make_allow_list_cache(allowlist);
+  }
+
   /* First add the resulting sums in two separate lists
    one for actions, and one for delta's. The delta's
    are added at the end to the actions, where for
@@ -235,7 +246,7 @@ inline void allowblockcomposition(
     const data::data_expression& condition = smmnd.condition();
 
     // Explicitly allow the termination action in any allow.
-    if ((is_allow && allow_(allowlist, multiaction, termination_action))
+    if ((is_allow && allow_(allow_cache, multiaction, termination_action))
         || (!is_allow && !encap(allowlist, multiaction)))
     {
       action_summands.push_back(smmnd);

@@ -14,6 +14,7 @@
 
 #include <QMessageBox>
 #include <QToolTip>
+#include <utility>
 
 static const int labelHeight = 40;
 static const int timerInterval = 10;
@@ -32,8 +33,8 @@ Simulator::Simulator(
     m_settings(s)
 {
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  m_diagram   = 0;
-  m_currentFrame = 0;
+  m_diagram   = nullptr;
+  m_currentFrame = nullptr;
 
   m_currentSelection = -1;
   m_currentSelectionIndex = -1;
@@ -56,7 +57,7 @@ Simulator::Simulator(
 
 Simulator::~Simulator()
 {
-  m_graph = 0;
+  m_graph = nullptr;
 
   clearDiagram();
   clearFrames();
@@ -81,7 +82,7 @@ std::size_t Simulator::SelectedClusterIndex()
   }
   else if (m_currentSelection == ID_FRAME_CURR)
   {
-    if (m_currentFrame != 0)
+    if (m_currentFrame != nullptr)
     {
       result = m_currentFrame->getNode(0)->getCluster()->getIndex();
     }
@@ -128,9 +129,9 @@ void Simulator::initFrameCurr(
   {
     // update new data
     m_attributes = attrs;
-    for (std::size_t i = 0; i < m_attributes.size(); ++i)
+    for (auto & attribute : m_attributes)
     {
-      connect(m_attributes[i], SIGNAL(deleted()), this, SLOT(reset()));
+      connect(attribute, SIGNAL(deleted()), this, SLOT(reset()));
     }
 
     m_currentFrame = new Cluster(*frame);
@@ -210,7 +211,7 @@ void Simulator::handleMouseLeaveEvent()
     m_previousBundleFocusIndex = -1;
     m_nextBundleFocusIndex = -1;
 
-    emit hoverCluster(0);
+    emit hoverCluster(nullptr);
   }
   else
   {
@@ -260,7 +261,7 @@ void Simulator::handleKeyEvent(QKeyEvent* e)
       m_currentSelection = -1;
       m_currentSelectionIndex = -1;
 
-      emit hoverCluster(0);
+      emit hoverCluster(nullptr);
     }
 
     markFrameClusts();
@@ -330,13 +331,13 @@ void Simulator::initFramesPrevNext()
     m_nextFrames);
 
   // clear memory
-  temp = 0;
+  temp = nullptr;
   tempPrev.clear();
   tempNext.clear();
   delete nodesPrev;
-  nodesPrev = 0;
+  nodesPrev = nullptr;
   delete nodesNext;
-  nodesNext = 0;
+  nodesNext = nullptr;
 }
 
 
@@ -362,11 +363,11 @@ void Simulator::initBundles()
   // get all edges from previous frames to current frame
   lbls.clear();
   {
-    for (std::size_t i = 0; i < m_previousFrames.size(); ++i)
+    for (auto & previousFrame : m_previousFrames)
     {
       bdls.clear();
 
-      clst = m_previousFrames[i];
+      clst = previousFrame;
       for (std::size_t j = 0; j < clst->getSizeNodes(); ++j)
       {
         node = clst->getNode(j);
@@ -430,10 +431,10 @@ void Simulator::initBundles()
   // get all edges from current frame to next frames
   lbls.clear();
   {
-    for (std::size_t i = 0; i < m_nextFrames.size(); ++i)
+    for (auto & nextFrame : m_nextFrames)
     {
       bdls.clear();
-      clst = m_nextFrames[i];
+      clst = nextFrame;
       for (std::size_t j = 0; j < clst->getSizeNodes(); ++j)
       {
         node = clst->getNode(j);
@@ -494,9 +495,9 @@ void Simulator::initBundles()
 
   lbls.clear();
   {
-    for (std::size_t i = 0; i < m_bundlesPreviousByLabel.size(); ++i)
+    for (auto & i : m_bundlesPreviousByLabel)
     {
-      bdl = m_bundlesPreviousByLabel[i];
+      bdl = i;
 
       std::map< std::string, Bundle* >::iterator pos;
       pos = lbls.find(bdl->getChild(0)->getEdge(0)->getLabel());
@@ -519,9 +520,9 @@ void Simulator::initBundles()
   }
 
   {
-    for (std::size_t i = 0; i < m_bundlesNextByLabel.size(); ++i)
+    for (auto & i : m_bundlesNextByLabel)
     {
-      bdl = m_bundlesNextByLabel[i];
+      bdl = i;
 
       std::map< std::string, Bundle* >::iterator pos;
       pos = lbls.find(bdl->getChild(0)->getEdge(0)->getLabel());
@@ -551,14 +552,14 @@ void Simulator::initBundles()
   }
 
   // clear memory
-  clst = 0;
-  edge = 0;
+  clst = nullptr;
+  edge = nullptr;
   currNodes.clear();
   bdls.clear();
-  bdl = 0;
+  bdl = nullptr;
 
   lbls.clear();
-  bdlLbls = 0;
+  bdlLbls = nullptr;
 }
 
 
@@ -568,15 +569,15 @@ void Simulator::sortFramesPrevNext()
 
   // sort previous frames
   {
-    for (std::size_t i = 0; i < m_previousFrames.size(); ++i)
+    for (auto & previousFrame : m_previousFrames)
     {
       int key = 0;
-      for (std::size_t j = 0; j < m_previousFrames[i]->getSizeOutBundles(); ++j)
+      for (std::size_t j = 0; j < previousFrame->getSizeOutBundles(); ++j)
       {
-        key += (int)pow(10.0, (int) m_previousFrames[i]->getOutBundle(j)->getParent()->getIndex());
+        key += (int)pow(10.0, (int) previousFrame->getOutBundle(j)->getParent()->getIndex());
       }
 
-      sorted.insert(std::pair< int, Cluster* >(key, m_previousFrames[i]));
+      sorted.insert(std::pair< int, Cluster* >(key, previousFrame));
     }
   }
 
@@ -589,15 +590,15 @@ void Simulator::sortFramesPrevNext()
   sorted.clear();
 
   // sort previous frames
-  for (std::size_t i = 0; i < m_nextFrames.size(); ++i)
+  for (auto & nextFrame : m_nextFrames)
   {
     int key = 0;
-    for (std::size_t j = 0; j < m_nextFrames[i]->getSizeInBundles(); ++j)
+    for (std::size_t j = 0; j < nextFrame->getSizeInBundles(); ++j)
     {
-      key += (int)pow(10.0, (int) m_nextFrames[i]->getInBundle(j)->getParent()->getIndex());
+      key += (int)pow(10.0, (int) nextFrame->getInBundle(j)->getParent()->getIndex());
     }
 
-    sorted.insert(std::pair< int, Cluster* >(key, m_nextFrames[i]));
+    sorted.insert(std::pair< int, Cluster* >(key, nextFrame));
   }
 
   m_nextFrames.clear();
@@ -640,7 +641,7 @@ void Simulator::calcPosFrames()
   QSizeF size = worldSize();
   double pix = pixelSize();
   double itvHori = size.width()/6;
-  double itvVert = (size.height()-itvHori)/Utils::maxx(1, Utils::maxx(m_previousFrames.size(), m_nextFrames.size()));
+  double itvVert = (size.height()-itvHori)/Utils::maxx(1, Utils::maxx(static_cast<double>(m_previousFrames.size()), static_cast<double>(m_nextFrames.size())));
   m_horizontalFrameScale = 0.5*itvHori;
   m_verticalFrameScale = Utils::minn(m_horizontalFrameScale, 0.45*itvVert);
 
@@ -650,7 +651,7 @@ void Simulator::calcPosFrames()
   m_currentFramePosition = pos;
 
   pos.x = -0.5*size.width() + 0.5*itvHori + 4.0*pix;
-  pos.y = 0.5*m_previousFrames.size()*itvVert - 0.5*itvVert;
+  pos.y = 0.5*static_cast<double>(m_previousFrames.size())*itvVert - 0.5*itvVert;
   {
     for (std::size_t i = 0; i < m_previousFrames.size(); ++i)
     {
@@ -660,7 +661,7 @@ void Simulator::calcPosFrames()
   }
 
   pos.x = 0.5*size.width() - 0.5*itvHori - 4.0*pix;
-  pos.y = 0.5*m_nextFrames.size()*itvVert - 0.5*itvVert;
+  pos.y = 0.5*static_cast<double>(m_nextFrames.size())*itvVert - 0.5*itvVert;
   {
     for (std::size_t i = 0; i < m_nextFrames.size(); ++i)
     {
@@ -689,7 +690,7 @@ void Simulator::calcPosBundles()
   QSizeF size = worldSize();
   double pix = pixelSize();
   double itvHori = size.width()/6;
-  double itvVert = (size.height()-itvHori)/Utils::maxx(1, Utils::maxx(m_previousFrames.size(), m_nextFrames.size()));
+  double itvVert = (size.height()-itvHori)/Utils::maxx(1, Utils::maxx(static_cast<double>(m_previousFrames.size()), static_cast<double>(m_nextFrames.size())));
 
   // calc new positions
   if (m_previousFramePositions.size() > 0 && m_bundlesPreviousByLabel.size() > 0)
@@ -706,12 +707,12 @@ void Simulator::calcPosBundles()
       posBotRgt.y = m_nextFramePositions[m_nextFramePositions.size()-1].y - 1.0*m_verticalFrameScale - 0.125*itvVert;
     }
 
-    double itvGrid = (1.5*itvHori)/(m_bundlesPreviousByLabel.size()+1);
+    double itvGrid = (1.5*itvHori)/(static_cast<double>(m_bundlesPreviousByLabel.size())+1);
 
     {
       for (std::size_t i = 0; i < m_bundlesPreviousByLabel.size(); ++i)
       {
-        posTopLft.x = -2.0*itvHori + (i+1)*itvGrid;
+        posTopLft.x = -2.0*itvHori + static_cast<double>(i+1)*itvGrid;
         posTopLft.y =  0.5*size.height() - labelHeight*pix;
         posBotRgt.x =  posTopLft.x;
         posBotRgt.y = -0.5*size.height() + labelHeight*pix;
@@ -731,30 +732,18 @@ void Simulator::calcPosBundles()
         m_previousBundlePositionBR.push_back(v);
 
         // incoming bundles
-        double itv = 2.0/m_bundlesPreviousByLabel.size();
+        double itv = 2.0/static_cast<double>(m_bundlesPreviousByLabel.size());
         {
           for (std::size_t j = 0; j < m_previousFrames[i]->getSizeOutBundles(); ++j)
           {
-            ///*
             posTopLft.x = m_previousFramePositions[i].x + 1.0*m_verticalFrameScale + 3.0*pix;
             posTopLft.y = m_previousFramePositions[i].y
                           + 1.0*m_verticalFrameScale
                           - 0.5*itv*m_verticalFrameScale
-                          - m_previousFrames[i]->getOutBundle(j)->getParent()->getIndex()*itv*m_verticalFrameScale;
+                          - static_cast<double>(m_previousFrames[i]->getOutBundle(j)->getParent()->getIndex())*itv*m_verticalFrameScale;
 
             posBotRgt.x = m_previousBundleLabelPositionTL[ m_previousFrames[i]->getOutBundle(j)->getParent()->getIndex() ].x;
             posBotRgt.y = posTopLft.y;
-            //*/
-            /*
-            posTopLft.x = posBdlLblGridPrevTopLft[ framesPrev[i]->getOutBundle(j)->getParent()->getIndex() ].x - 1.0*pix;
-            posTopLft.y = posBotRgt.y = posFramesPrev[i].y
-                + 1.0*scaleDgrmVert
-                - 0.5*itv*scaleDgrmVert
-                - framesPrev[i]->getOutBundle(j)->getParent()->getIndex()*itv*scaleDgrmVert;
-
-            posBotRgt.x = posFrameCurr.x - 1.0*scaleDgrmHori - 3.0*pix;
-            posBotRgt.y = posTopLft.y;
-            */
             m_previousBundlePositionTL[i].push_back(posTopLft);
             m_previousBundlePositionBR[i].push_back(posBotRgt);
           }
@@ -778,12 +767,12 @@ void Simulator::calcPosBundles()
     }
 
     // grid next
-    double itvGrid = (1.5*itvHori)/(m_bundlesNextByLabel.size()+1);
+    double itvGrid = (1.5*itvHori)/(static_cast<double>(m_bundlesNextByLabel.size())+1);
 
     {
       for (std::size_t i = 0; i < m_bundlesNextByLabel.size(); ++i)
       {
-        posTopLft.x = 2.0*itvHori - (m_bundlesNextByLabel.size()-i)*itvGrid;
+        posTopLft.x = 2.0*itvHori - static_cast<double>(m_bundlesNextByLabel.size()-i)*itvGrid;
         posTopLft.y =  0.5*size.height() - labelHeight*pix;
         posBotRgt.x = posTopLft.x;
         posBotRgt.y = -0.5*size.height() + labelHeight*pix;
@@ -803,7 +792,7 @@ void Simulator::calcPosBundles()
         m_nextBundlePositionBR.push_back(v);
 
         // outgoing bundles
-        double itv = 2.0/m_bundlesNextByLabel.size();
+        double itv = 2.0/static_cast<double>(m_bundlesNextByLabel.size());
         {
           for (std::size_t j = 0; j < m_nextFrames[i]->getSizeInBundles(); ++j)
           {
@@ -811,7 +800,7 @@ void Simulator::calcPosBundles()
             posTopLft.y = posBotRgt.y = m_nextFramePositions[i].y
                                         + 1.0*m_verticalFrameScale
                                         - 0.5*itv*m_verticalFrameScale
-                                        - m_nextFrames[i]->getInBundle(j)->getParent()->getIndex()*itv*m_verticalFrameScale;
+                                        - static_cast<double>(m_nextFrames[i]->getInBundle(j)->getParent()->getIndex())*itv*m_verticalFrameScale;
 
             posBotRgt.x = m_nextFramePositions[i].x - 1.0*m_verticalFrameScale - 3.0*pix;
             posBotRgt.y = posTopLft.y;
@@ -1035,7 +1024,7 @@ void Simulator::markFrameClusts()
   }
   else if (m_currentSelection == ID_FRAME_CURR)
   {
-    if (m_currentFrame != 0)
+    if (m_currentFrame != nullptr)
     {
       emit hoverCluster(m_currentFrame, makeQList<Attribute*>(m_attributes.begin(), m_attributes.end()));
     }
@@ -1060,30 +1049,30 @@ void Simulator::clearAttributes()
 
 void Simulator::clearDiagram()
 {
-  m_diagram = 0;
+  m_diagram = nullptr;
 }
 
 
 void Simulator::clearFrames()
 {
-  if (m_currentFrame != 0)
+  if (m_currentFrame != nullptr)
   {
     delete m_currentFrame;
-    m_currentFrame = 0;
+    m_currentFrame = nullptr;
   }
 
   {
-    for (std::size_t i = 0; i < m_previousFrames.size(); ++i)
+    for (auto & previousFrame : m_previousFrames)
     {
-      delete m_previousFrames[i];
+      delete previousFrame;
     }
   }
   m_previousFrames.clear();
 
   {
-    for (std::size_t i = 0; i < m_nextFrames.size(); ++i)
+    for (auto & nextFrame : m_nextFrames)
     {
-      delete m_nextFrames[i];
+      delete nextFrame;
     }
   }
   m_nextFrames.clear();
@@ -1096,33 +1085,33 @@ void Simulator::clearFrames()
 void Simulator::clearBundles()
 {
   {
-    for (std::size_t i = 0; i < m_bundles.size(); ++i)
+    for (auto & bundle : m_bundles)
     {
-      delete m_bundles[i];
+      delete bundle;
     }
     m_bundles.clear();
   }
 
   {
-    for (std::size_t i = 0; i < m_bundlesPreviousByLabel.size(); ++i)
+    for (auto & i : m_bundlesPreviousByLabel)
     {
-      delete m_bundlesPreviousByLabel[i];
+      delete i;
     }
   }
   m_bundlesPreviousByLabel.clear();
 
   {
-    for (std::size_t i = 0; i < m_bundlesNextByLabel.size(); ++i)
+    for (auto & i : m_bundlesNextByLabel)
     {
-      delete m_bundlesNextByLabel[i];
+      delete i;
     }
   }
   m_bundlesNextByLabel.clear();
 
   {
-    for (std::size_t i = 0; i < m_bundlesByLabel.size(); ++i)
+    for (auto & i : m_bundlesByLabel)
     {
-      delete m_bundlesByLabel[i];
+      delete i;
     }
   }
   m_bundlesByLabel.clear();
@@ -1153,7 +1142,7 @@ void Simulator::handleHits(const std::vector< int > &ids)
         m_currentSelection = -1;
         m_currentSelectionIndex = -1;
 
-        emit hoverCluster(0);
+        emit hoverCluster(nullptr);
       }
 
       m_previousBundleFocusIndex = -1;
@@ -1166,7 +1155,7 @@ void Simulator::handleHits(const std::vector< int > &ids)
     {
       if (m_lastMouseEvent->type() == QEvent::MouseButtonPress)
       {
-        if (ids[1] == ID_ICON_CLEAR && (m_previousFrames.size() > 0 || m_currentFrame != 0 || m_nextFrames.size() > 0))
+        if (ids[1] == ID_ICON_CLEAR && (m_previousFrames.size() > 0 || m_currentFrame != nullptr || m_nextFrames.size() > 0))
         {
           if(QMessageBox::question(this, "Confirm simulator clear", "Are you sure you want to clear the simulator?", QMessageBox::Ok | QMessageBox::Cancel) == QMessageBox::Ok)
           {
@@ -1271,7 +1260,7 @@ void Simulator::clear()
 
 QColor Simulator::calcColor(std::size_t iter, std::size_t numr)
 {
-  return VisUtils::qualPair(iter, numr);
+  return VisUtils::qualPair(static_cast<int>(iter), static_cast<int>(numr));
 }
 
 
@@ -1279,14 +1268,14 @@ template <Visualizer::Mode mode> void Simulator::drawFrameCurr()
 {
   if constexpr (mode == Marking)
   {
-    if (m_currentFrame != 0)
+    if (m_currentFrame != nullptr)
     {
       double x = m_currentFramePosition.x;
       double y = m_currentFramePosition.y;
 
       glPushMatrix();
-      glTranslatef(x, y, 0.0);
-      glScalef(m_horizontalFrameScale, m_horizontalFrameScale, m_horizontalFrameScale);
+      glTranslatef(static_cast<GLfloat>(x), static_cast<GLfloat>(y), 0.0f);
+      glScalef(static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale));
 
       glPushName(ID_FRAME_CURR);
 
@@ -1312,26 +1301,19 @@ template <Visualizer::Mode mode> void Simulator::drawFrameCurr()
     double pix = pixelSize();
     std::vector< double > valsFrame;
 
-    if (m_currentFrame != 0)
+    if (m_currentFrame != nullptr)
     {
       double x = m_currentFramePosition.x;
       double y = m_currentFramePosition.y;
-      /*
-      for ( int j = 0; j < attributes.size(); ++j )
-          valsFrame.push_back(
-              attributes[j]->mapToValue(
-                  frameCurr->getNode(0)->getTupleVal(
-                      attributes[j]->getIndex() ) )->getIndex() );
-      */
       Attribute* attr;
       Node* node;
-      for (std::size_t j = 0; j < m_attributes.size(); ++j)
+      for (auto & attribute : m_attributes)
       {
-        attr = m_attributes[j];
+        attr = attribute;
         node = m_currentFrame->getNode(0);
         if (attr->getSizeCurValues() > 0)
         {
-          valsFrame.push_back(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex());
+          valsFrame.push_back(static_cast<double>(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex()));
         }
         else
         {
@@ -1339,12 +1321,12 @@ template <Visualizer::Mode mode> void Simulator::drawFrameCurr()
           valsFrame.push_back(val);
         }
       }
-      attr = 0;
-      node = 0;
+      attr = nullptr;
+      node = nullptr;
 
       glPushMatrix();
-      glTranslatef(x, y, 0.0);
-      glScalef(m_horizontalFrameScale, m_horizontalFrameScale, m_horizontalFrameScale);
+      glTranslatef(static_cast<GLfloat>(x), static_cast<GLfloat>(y), 0.0f);
+      glScalef(static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale));
 
       if (m_currentSelection == ID_FRAME_CURR)
       {
@@ -1392,15 +1374,15 @@ template <Visualizer::Mode mode> void Simulator::drawFramesPrev()
       double y = m_previousFramePositions[i].y;
 
       glPushMatrix();
-      glTranslatef(x, y, 0.0);
+      glTranslatef(static_cast<GLfloat>(x), static_cast<GLfloat>(y), 0.0f);
 
-      if (m_currentSelection == ID_FRAME_PREV &&  static_cast <std::size_t>(m_currentSelectionIndex) == i)
+      if (m_currentSelection == ID_FRAME_PREV &&  std::cmp_equal(m_currentSelectionIndex, i))
       {
-        glScalef(m_horizontalFrameScale, m_horizontalFrameScale, m_horizontalFrameScale);
+        glScalef(static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale));
       }
       else
       {
-        glScalef(m_verticalFrameScale, m_verticalFrameScale, m_verticalFrameScale);
+        glScalef(static_cast<GLfloat>(m_verticalFrameScale), static_cast<GLfloat>(m_verticalFrameScale), static_cast<GLfloat>(m_verticalFrameScale));
       }
 
       glPushName((GLuint) i);
@@ -1408,7 +1390,7 @@ template <Visualizer::Mode mode> void Simulator::drawFramesPrev()
         -1.0,  1.0,
         1.0, -1.0);
 
-      if (m_currentSelection == ID_FRAME_PREV &&  static_cast <std::size_t>(m_currentSelectionIndex) == i)
+      if (m_currentSelection == ID_FRAME_PREV &&  std::cmp_equal(m_currentSelectionIndex, i))
       {
         glPushName(ID_DIAGRAM_MORE);
         VisUtils::fillRect(-0.98, -0.8, -0.8, -0.98);
@@ -1426,7 +1408,7 @@ template <Visualizer::Mode mode> void Simulator::drawFramesPrev()
     double pix = pixelSize();
     std::vector< double > valsFrame;
 
-    for (int i = 0; i < (int) m_previousFramePositions.size(); ++i)
+    for (int i = 0; std::cmp_less(i , m_previousFramePositions.size()); ++i)
     {
       if (m_currentSelection != ID_FRAME_PREV ||  i != m_currentSelectionIndex)
       {
@@ -1434,8 +1416,8 @@ template <Visualizer::Mode mode> void Simulator::drawFramesPrev()
         double y = m_previousFramePositions[i].y;
 
         glPushMatrix();
-        glTranslatef(x, y, 0.0);
-        glScalef(m_verticalFrameScale, m_verticalFrameScale, m_verticalFrameScale);
+        glTranslatef(static_cast<GLfloat>(x), static_cast<GLfloat>(y), 0.0f);
+        glScalef(static_cast<GLfloat>(m_verticalFrameScale), static_cast<GLfloat>(m_verticalFrameScale), static_cast<GLfloat>(m_verticalFrameScale));
 
         VisUtils::setColor(VisUtils::mediumGray);
         VisUtils::fillRect(
@@ -1444,22 +1426,15 @@ template <Visualizer::Mode mode> void Simulator::drawFramesPrev()
 
         if (2.0*m_verticalFrameScale > 30.0*pix)
         {
-          /*
-          for ( int j = 0; j < attributes.size(); ++j )
-              valsFrame.push_back(
-                  attributes[j]->mapToValue(
-                      framesPrev[i]->getNode(0)->getTupleVal(
-                          attributes[j]->getIndex() ) )->getIndex() );
-          */
           Attribute* attr;
           Node* node;
-          for (std::size_t j = 0; j < m_attributes.size(); ++j)
+          for (auto & attribute : m_attributes)
           {
-            attr = m_attributes[j];
+            attr = attribute;
             node = m_previousFrames[i]->getNode(0);
             if (attr->getSizeCurValues() > 0)
             {
-              valsFrame.push_back(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex());
+              valsFrame.push_back(static_cast<double>(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex()));
             }
             else
             {
@@ -1467,8 +1442,8 @@ template <Visualizer::Mode mode> void Simulator::drawFramesPrev()
               valsFrame.push_back(val);
             }
           }
-          attr = 0;
-          node = 0;
+          attr = nullptr;
+          node = nullptr;
 
           m_diagram->draw<mode>(pixelSize(), m_attributes, valsFrame);
         }
@@ -1490,22 +1465,15 @@ template <Visualizer::Mode mode> void Simulator::drawFramesPrev()
     {
       if (0 <= m_currentSelectionIndex &&  static_cast <std::size_t>(m_currentSelectionIndex) < m_previousFramePositions.size())
       {
-        /*
-        for ( int j = 0; j < attributes.size(); ++j )
-            valsFrame.push_back(
-                attributes[j]->mapToValue(
-                    framesPrev[focusFrameIdx]->getNode(0)->getTupleVal(
-                        attributes[j]->getIndex() ) )->getIndex() );
-        */
         Attribute* attr;
         Node* node;
-        for (std::size_t j = 0; j < m_attributes.size(); ++j)
+        for (auto & attribute : m_attributes)
         {
-          attr = m_attributes[j];
+          attr = attribute;
           node = m_previousFrames[m_currentSelectionIndex]->getNode(0);
           if (attr->getSizeCurValues() > 0)
           {
-            valsFrame.push_back(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex());
+            valsFrame.push_back(static_cast<double>(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex()));
           }
           else
           {
@@ -1513,15 +1481,15 @@ template <Visualizer::Mode mode> void Simulator::drawFramesPrev()
             valsFrame.push_back(val);
           }
         }
-        attr = 0;
-        node = 0;
+        attr = nullptr;
+        node = nullptr;
 
         glPushMatrix();
         glTranslatef(
-          m_previousFramePositions[m_currentSelectionIndex].x,
-          m_previousFramePositions[m_currentSelectionIndex].y,
-          0.0);
-        glScalef(m_horizontalFrameScale, m_horizontalFrameScale, m_horizontalFrameScale);
+          static_cast<GLfloat>(m_previousFramePositions[m_currentSelectionIndex].x),
+          static_cast<GLfloat>(m_previousFramePositions[m_currentSelectionIndex].y),
+          0.0f);
+        glScalef(static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale));
 
         VisUtils::setColor(SelectColor());
         VisUtils::fillRect(
@@ -1556,21 +1524,21 @@ template <Visualizer::Mode mode> void Simulator::drawFramesNext()
       double y = m_nextFramePositions[i].y;
 
       glPushMatrix();
-      glTranslatef(x, y, 0.0);
+      glTranslatef(static_cast<GLfloat>(x), static_cast<GLfloat>(y), 0.0f);
 
-      if (m_currentSelection == ID_FRAME_NEXT &&  static_cast <std::size_t>(m_currentSelectionIndex) == i)
+      if (m_currentSelection == ID_FRAME_NEXT &&  std::cmp_equal(m_currentSelectionIndex, i))
       {
-        glScalef(m_horizontalFrameScale, m_horizontalFrameScale, m_horizontalFrameScale);
+        glScalef(static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale));
       }
       else
       {
-        glScalef(m_verticalFrameScale, m_verticalFrameScale, m_verticalFrameScale);
+        glScalef(static_cast<GLfloat>(m_verticalFrameScale), static_cast<GLfloat>(m_verticalFrameScale), static_cast<GLfloat>(m_verticalFrameScale));
       }
 
       glPushName((GLuint) i);
       VisUtils::fillRect(-1.0, 1.0, 1.0, -1.0);
 
-      if (m_currentSelection == ID_FRAME_NEXT &&  static_cast <std::size_t>(m_currentSelectionIndex) == i)
+      if (m_currentSelection == ID_FRAME_NEXT &&  std::cmp_equal(m_currentSelectionIndex, i))
       {
         glPushName(ID_DIAGRAM_MORE);
         VisUtils::fillRect(-0.98, -0.8, -0.8, -0.98);
@@ -1586,18 +1554,18 @@ template <Visualizer::Mode mode> void Simulator::drawFramesNext()
   else
   {
     double pix = pixelSize();
-    std::vector< double > valsFrame;
+    std::vector<double> valsFrame;
 
     for (std::size_t i = 0; i < m_nextFramePositions.size(); ++i)
     {
-      if (m_currentSelection != ID_FRAME_NEXT || i !=  static_cast <std::size_t>(m_currentSelectionIndex))
+      if (m_currentSelection != ID_FRAME_NEXT || std::cmp_not_equal(i, m_currentSelectionIndex))
       {
         double x = m_nextFramePositions[i].x;
         double y = m_nextFramePositions[i].y;
 
         glPushMatrix();
-        glTranslatef(x, y, 0.0);
-        glScalef(m_verticalFrameScale, m_verticalFrameScale, m_verticalFrameScale);
+        glTranslatef(static_cast<GLfloat>(x), static_cast<GLfloat>(y), 0.0f);
+        glScalef(static_cast<GLfloat>(m_verticalFrameScale), static_cast<GLfloat>(m_verticalFrameScale), static_cast<GLfloat>(m_verticalFrameScale));
 
         VisUtils::setColor(VisUtils::mediumGray);
         VisUtils::fillRect(
@@ -1606,22 +1574,15 @@ template <Visualizer::Mode mode> void Simulator::drawFramesNext()
 
         if (2.0*m_verticalFrameScale > 30.0*pix)
         {
-          /*
-          for ( int j = 0; j < attributes.size(); ++j )
-              valsFrame.push_back(
-                  attributes[j]->mapToValue(
-                      framesNext[i]->getNode(0)->getTupleVal(
-                          attributes[j]->getIndex() ) )->getIndex() );
-          */
           Attribute* attr;
           Node* node;
-          for (std::size_t j = 0; j < m_attributes.size(); ++j)
+          for (auto & attribute : m_attributes)
           {
-            attr = m_attributes[j];
+            attr = attribute;
             node = m_nextFrames[i]->getNode(0);
             if (attr->getSizeCurValues() > 0)
             {
-              valsFrame.push_back(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex());
+              valsFrame.push_back(static_cast<double>(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex()));
             }
             else
             {
@@ -1629,8 +1590,8 @@ template <Visualizer::Mode mode> void Simulator::drawFramesNext()
               valsFrame.push_back(val);
             }
           }
-          attr = 0;
-          node = 0;
+          attr = nullptr;
+          node = nullptr;
 
           m_diagram->draw<mode>(pixelSize(), m_attributes, valsFrame);
         }
@@ -1652,22 +1613,15 @@ template <Visualizer::Mode mode> void Simulator::drawFramesNext()
     {
       if (0 <= m_currentSelectionIndex &&  static_cast <std::size_t>(m_currentSelectionIndex) < m_nextFramePositions.size())
       {
-        /*
-        for ( int j = 0; j < attributes.size(); ++j )
-            valsFrame.push_back(
-                attributes[j]->mapToValue(
-                    framesNext[focusFrameIdx]->getNode(0)->getTupleVal(
-                        attributes[j]->getIndex() ) )->getIndex() );
-        */
         Attribute* attr;
         Node* node;
-        for (std::size_t j = 0; j < m_attributes.size(); ++j)
+        for (auto & attribute : m_attributes)
         {
-          attr = m_attributes[j];
+          attr = attribute;
           node = m_nextFrames[m_currentSelectionIndex]->getNode(0);
           if (attr->getSizeCurValues() > 0)
           {
-            valsFrame.push_back(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex());
+            valsFrame.push_back(static_cast<double>(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex()));
           }
           else
           {
@@ -1675,15 +1629,15 @@ template <Visualizer::Mode mode> void Simulator::drawFramesNext()
             valsFrame.push_back(val);
           }
         }
-        attr = 0;
-        node = 0;
+        attr = nullptr;
+        node = nullptr;
 
         glPushMatrix();
         glTranslatef(
-          m_nextFramePositions[m_currentSelectionIndex].x,
-          m_nextFramePositions[m_currentSelectionIndex].y,
-          0.0);
-        glScalef(m_horizontalFrameScale, m_horizontalFrameScale, m_horizontalFrameScale);
+          static_cast<GLfloat>(m_nextFramePositions[m_currentSelectionIndex].x),
+          static_cast<GLfloat>(m_nextFramePositions[m_currentSelectionIndex].y),
+          0.0f);
+        glScalef(static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale));
 
         VisUtils::setColor(SelectColor());
         VisUtils::fillRect(
@@ -1723,26 +1677,26 @@ template <Visualizer::Mode mode> void Simulator::drawBdlLblGridPrev()
 
       glPushMatrix();
       glTranslatef(
-        m_previousBundleLabelPositionTL[i].x,
-        m_previousBundleLabelPositionTL[i].y,
-        0.0);
+        static_cast<GLfloat>(m_previousBundleLabelPositionTL[i].x),
+        static_cast<GLfloat>(m_previousBundleLabelPositionTL[i].y),
+        0.0f);
       glRotatef(45.0, 0.0, 0.0, 1.0);
 
       VisUtils::fillRect(
-        0.0, (lbl.size()+1)*CHARWIDTH*(m_settings->textSize.value()*pix/CHARHEIGHT),
+        0.0, (static_cast<double>(lbl.size())+1)*CHARWIDTH*(m_settings->textSize.value()*pix/CHARHEIGHT),
         0.5*m_settings->textSize.value()*pix, -0.5*m_settings->textSize.value()*pix);
 
       glPopMatrix();
 
       glPushMatrix();
       glTranslatef(
-        m_previousBundleLabelPositionBR[i].x,
-        m_previousBundleLabelPositionBR[i].y,
-        0.0);
+        static_cast<GLfloat>(m_previousBundleLabelPositionBR[i].x),
+        static_cast<GLfloat>(m_previousBundleLabelPositionBR[i].y),
+        0.0f);
       glRotatef(45.0, 0.0, 0.0, 1.0);
 
       VisUtils::fillRect(
-        -((lbl.size()+1)*CHARWIDTH*(m_settings->textSize.value()*pix/CHARHEIGHT)),  0.0,
+        -((static_cast<double>(lbl.size())+1)*CHARWIDTH*(m_settings->textSize.value()*pix/CHARHEIGHT)),  0.0,
         0.5*m_settings->textSize.value()*pix,                                     -0.5*m_settings->textSize.value()*pix);
 
       glPopMatrix();
@@ -1776,14 +1730,14 @@ template <Visualizer::Mode mode> void Simulator::drawBdlLblGridPrev()
 
         glPushMatrix();
         glTranslatef(
-          m_previousBundleLabelPositionTL[i].x,
-          m_previousBundleLabelPositionTL[i].y,
-          0.0);
+          static_cast<GLfloat>(m_previousBundleLabelPositionTL[i].x),
+          static_cast<GLfloat>(m_previousBundleLabelPositionTL[i].y),
+          0.0f);
         glRotatef(45.0, 0.0, 0.0, 1.0);
 
         VisUtils::setColor(m_settings->textColor.value());
         VisUtils::drawLabel(
-          texCharId,
+          &texCharId[0],
           0.0 + 3*pix,
           0.0,
           txt*pix/CHARHEIGHT,
@@ -1793,14 +1747,14 @@ template <Visualizer::Mode mode> void Simulator::drawBdlLblGridPrev()
 
         glPushMatrix();
         glTranslatef(
-          m_previousBundleLabelPositionBR[i].x,
-          m_previousBundleLabelPositionBR[i].y,
-          0.0);
+          static_cast<GLfloat>(m_previousBundleLabelPositionBR[i].x),
+          static_cast<GLfloat>(m_previousBundleLabelPositionBR[i].y),
+          0.0f);
         glRotatef(45.0, 0.0, 0.0, 1.0);
 
         VisUtils::setColor(m_settings->textColor.value());
         VisUtils::drawLabelLeft(
-          texCharId,
+          &texCharId[0],
           0.0 - 3*pix,
           0.0,
           txt*pix/CHARHEIGHT,
@@ -1828,25 +1782,25 @@ template <Visualizer::Mode mode> void Simulator::drawBdlLblGridPrev()
 
       glPushMatrix();
       glTranslatef(
-        m_previousBundleLabelPositionTL[idxHiLite].x,
-        m_previousBundleLabelPositionTL[idxHiLite].y,
-        0.0);
+        static_cast<GLfloat>(m_previousBundleLabelPositionTL[idxHiLite].x),
+        static_cast<GLfloat>(m_previousBundleLabelPositionTL[idxHiLite].y),
+        0.0f);
       glRotatef(45.0, 0.0, 0.0, 1.0);
 
       VisUtils::enableLineAntiAlias();
       VisUtils::setColor(m_settings->backgroundColor.value());
       VisUtils::fillRect(
-        0.0, (lbl.size()+1)*CHARWIDTH*(txt*pix/CHARHEIGHT) + pix,
+        0.0, (static_cast<double>(lbl.size())+1)*CHARWIDTH*(txt*pix/CHARHEIGHT) + pix,
         0.5*txt*pix, -0.5*txt*pix - pix);
       VisUtils::setColor(colLne);
       VisUtils::drawRect(
-        0.0, (lbl.size()+1)*CHARWIDTH*(txt*pix/CHARHEIGHT) + pix,
+        0.0, (static_cast<double>(lbl.size())+1)*CHARWIDTH*(txt*pix/CHARHEIGHT) + pix,
         0.5*txt*pix, -0.5*txt*pix - pix);
       VisUtils::disableLineAntiAlias();
 
       VisUtils::setColor(m_settings->textColor.value());
       VisUtils::drawLabel(
-        texCharId,
+        &texCharId[0],
         0.0 + 3*pix,
         0.0,
         txt*pix/CHARHEIGHT,
@@ -1856,25 +1810,25 @@ template <Visualizer::Mode mode> void Simulator::drawBdlLblGridPrev()
 
       glPushMatrix();
       glTranslatef(
-        m_previousBundleLabelPositionBR[idxHiLite].x,
-        m_previousBundleLabelPositionBR[idxHiLite].y,
-        0.0);
+        static_cast<GLfloat>(m_previousBundleLabelPositionBR[idxHiLite].x),
+        static_cast<GLfloat>(m_previousBundleLabelPositionBR[idxHiLite].y),
+        0.0f);
       glRotatef(45.0, 0.0, 0.0, 1.0);
 
       VisUtils::enableLineAntiAlias();
       VisUtils::setColor(m_settings->backgroundColor.value());
       VisUtils::fillRect(
-        -((lbl.size()+1)*CHARWIDTH*(txt*pix/CHARHEIGHT)), 0.0 + pix,
+        -((static_cast<double>(lbl.size())+1)*CHARWIDTH*(txt*pix/CHARHEIGHT)), 0.0 + pix,
         0.5*txt*pix,                                   -0.5*txt*pix - pix);
       VisUtils::setColor(colLne);
       VisUtils::drawRect(
-        -((lbl.size()+1)*CHARWIDTH*(txt*pix/CHARHEIGHT)), 0.0 + pix,
+        -((static_cast<double>(lbl.size())+1)*CHARWIDTH*(txt*pix/CHARHEIGHT)), 0.0 + pix,
         0.5*txt*pix,                                   -0.5*txt*pix - pix);
       VisUtils::disableLineAntiAlias();
 
       VisUtils::setColor(m_settings->textColor.value());
       VisUtils::drawLabelLeft(
-        texCharId,
+        &texCharId[0],
         0.0 - 3*pix,
         0.0,
         txt*pix/CHARHEIGHT,
@@ -1908,26 +1862,26 @@ template <Visualizer::Mode mode> void Simulator::drawBdlLblGridNext()
 
       glPushMatrix();
       glTranslatef(
-        m_nextBundleLabelPositionTL[i].x,
-        m_nextBundleLabelPositionTL[i].y,
-        0.0);
+        static_cast<GLfloat>(m_nextBundleLabelPositionTL[i].x),
+        static_cast<GLfloat>(m_nextBundleLabelPositionTL[i].y),
+        0.0f);
       glRotatef(45.0, 0.0, 0.0, 1.0);
 
       VisUtils::fillRect(
-        0.0, (lbl.size()+1)*CHARWIDTH*(m_settings->textSize.value()*pix/CHARHEIGHT),
+        0.0, (static_cast<double>(lbl.size())+1)*CHARWIDTH*(m_settings->textSize.value()*pix/CHARHEIGHT),
         0.5*m_settings->textSize.value()*pix, -0.5*m_settings->textSize.value()*pix);
 
       glPopMatrix();
 
       glPushMatrix();
       glTranslatef(
-        m_nextBundleLabelPositionBR[i].x,
-        m_nextBundleLabelPositionBR[i].y,
-        0.0);
+        static_cast<GLfloat>(m_nextBundleLabelPositionBR[i].x),
+        static_cast<GLfloat>(m_nextBundleLabelPositionBR[i].y),
+        0.0f);
       glRotatef(45.0, 0.0, 0.0, 1.0);
 
       VisUtils::fillRect(
-        -((lbl.size()+1)*CHARWIDTH*(m_settings->textSize.value()*pix/CHARHEIGHT)), 0.0,
+        -((static_cast<double>(lbl.size())+1)*CHARWIDTH*(m_settings->textSize.value()*pix/CHARHEIGHT)), 0.0,
         0.5*m_settings->textSize.value()*pix,                                    -0.5*m_settings->textSize.value()*pix);
 
       glPopMatrix();
@@ -1961,14 +1915,14 @@ template <Visualizer::Mode mode> void Simulator::drawBdlLblGridNext()
 
         glPushMatrix();
         glTranslatef(
-          m_nextBundleLabelPositionTL[i].x,
-          m_nextBundleLabelPositionTL[i].y,
-          0.0);
+          static_cast<GLfloat>(m_nextBundleLabelPositionTL[i].x),
+          static_cast<GLfloat>(m_nextBundleLabelPositionTL[i].y),
+          0.0f);
         glRotatef(45.0, 0.0, 0.0, 1.0);
 
         VisUtils::setColor(m_settings->textColor.value());
         VisUtils::drawLabel(
-          texCharId,
+          &texCharId[0],
           0.0 + 3*pix,
           0.0,
           txt*pix/CHARHEIGHT,
@@ -1978,14 +1932,14 @@ template <Visualizer::Mode mode> void Simulator::drawBdlLblGridNext()
 
         glPushMatrix();
         glTranslatef(
-          m_nextBundleLabelPositionBR[i].x,
-          m_nextBundleLabelPositionBR[i].y,
-          0.0);
+          static_cast<GLfloat>(m_nextBundleLabelPositionBR[i].x),
+          static_cast<GLfloat>(m_nextBundleLabelPositionBR[i].y),
+          0.0f);
         glRotatef(45.0, 0.0, 0.0, 1.0);
 
         VisUtils::setColor(m_settings->textColor.value());
         VisUtils::drawLabelLeft(
-          texCharId,
+          &texCharId[0],
           0.0 - 3*pix,
           0.0,
           txt*pix/CHARHEIGHT,
@@ -2013,25 +1967,25 @@ template <Visualizer::Mode mode> void Simulator::drawBdlLblGridNext()
 
       glPushMatrix();
       glTranslatef(
-        m_nextBundleLabelPositionTL[idxHiLite].x,
-        m_nextBundleLabelPositionTL[idxHiLite].y,
-        0.0);
+        static_cast<GLfloat>(m_nextBundleLabelPositionTL[idxHiLite].x),
+        static_cast<GLfloat>(m_nextBundleLabelPositionTL[idxHiLite].y),
+        0.0f);
       glRotatef(45.0, 0.0, 0.0, 1.0);
 
       VisUtils::enableLineAntiAlias();
       VisUtils::setColor(m_settings->backgroundColor.value());
       VisUtils::fillRect(
-        0.0, (lbl.size()+1)*CHARWIDTH*(txt*pix/CHARHEIGHT) + pix,
+        0.0, (static_cast<double>(lbl.size())+1)*CHARWIDTH*(txt*pix/CHARHEIGHT) + pix,
         0.5*txt*pix, -0.5*txt*pix - pix);
       VisUtils::setColor(colLne);
       VisUtils::drawRect(
-        0.0, (lbl.size()+1)*CHARWIDTH*(txt*pix/CHARHEIGHT) + pix,
+        0.0, (static_cast<double>(lbl.size())+1)*CHARWIDTH*(txt*pix/CHARHEIGHT) + pix,
         0.5*txt*pix, -0.5*txt*pix - pix);
       VisUtils::disableLineAntiAlias();
 
       VisUtils::setColor(m_settings->textColor.value());
       VisUtils::drawLabel(
-        texCharId,
+        &texCharId[0],
         0.0 + 3*pix,
         0.0,
         txt*pix/CHARHEIGHT,
@@ -2041,25 +1995,25 @@ template <Visualizer::Mode mode> void Simulator::drawBdlLblGridNext()
 
       glPushMatrix();
       glTranslatef(
-        m_nextBundleLabelPositionBR[idxHiLite].x,
-        m_nextBundleLabelPositionBR[idxHiLite].y,
-        0.0);
+        static_cast<GLfloat>(m_nextBundleLabelPositionBR[idxHiLite].x),
+        static_cast<GLfloat>(m_nextBundleLabelPositionBR[idxHiLite].y),
+        0.0f);
       glRotatef(45.0, 0.0, 0.0, 1.0);
 
       VisUtils::enableLineAntiAlias();
       VisUtils::setColor(m_settings->backgroundColor.value());
       VisUtils::fillRect(
-        -((lbl.size()+1)*CHARWIDTH*(txt*pix/CHARHEIGHT)), 0.0 + pix,
+        -((static_cast<double>(lbl.size())+1)*CHARWIDTH*(txt*pix/CHARHEIGHT)), 0.0 + pix,
         0.5*txt*pix,                                   -0.5*txt*pix - pix);
       VisUtils::setColor(colLne);
       VisUtils::drawRect(
-        -((lbl.size()+1)*CHARWIDTH*(txt*pix/CHARHEIGHT)), 0.0 + pix,
+        -((static_cast<double>(lbl.size())+1)*CHARWIDTH*(txt*pix/CHARHEIGHT)), 0.0 + pix,
         0.5*txt*pix,                                   -0.5*txt*pix - pix);
       VisUtils::disableLineAntiAlias();
 
       VisUtils::setColor(m_settings->textColor.value());
       VisUtils::drawLabelLeft(
-        texCharId,
+        &texCharId[0],
         0.0 - 3*pix,
         0.0,
         txt*pix/CHARHEIGHT,
@@ -2428,7 +2382,7 @@ template <Visualizer::Mode mode> void Simulator::draw()
       drawFrameCurr<mode>();
       drawFramesPrev<mode>();
       drawFramesNext<mode>();
-      if (m_previousFrames.size() > 0 || m_currentFrame != 0 || m_nextFrames.size() > 0)
+      if (m_previousFrames.size() > 0 || m_currentFrame != nullptr || m_nextFrames.size() > 0)
       {
         drawControls<mode>();
       }
@@ -2454,7 +2408,7 @@ template <Visualizer::Mode mode> void Simulator::draw()
       drawFrameCurr<mode>();
       drawFramesPrev<mode>();
       drawFramesNext<mode>();
-      if (m_previousFrames.size() > 0 || m_currentFrame != 0 || m_nextFrames.size() > 0)
+      if (m_previousFrames.size() > 0 || m_currentFrame != nullptr || m_nextFrames.size() > 0)
       {
         drawControls<mode>();
       }
@@ -2471,31 +2425,22 @@ void Simulator::animate()
 {
   std::vector< double > valsFrame;
 
-  if (m_animationOldFrame != 0)
+  if (m_animationOldFrame != nullptr)
   {
     if (m_currentAnimationPhase == ANIM_POS)
     {
       // 'new' current frame
       double x = m_animationCurrentPosition.x;
       double y = m_animationCurrentPosition.y;
-      /*
-      {
-      for ( int j = 0; j < attributes.size(); ++j )
-          valsFrame.push_back(
-              attributes[j]->mapToValue(
-                  keyFrameFr->getNode(0)->getTupleVal(
-                      attributes[j]->getIndex() ) )->getIndex() );
-      }
-      */
       Attribute* attr;
       Node* node;
-      for (std::size_t j = 0; j < m_attributes.size(); ++j)
+      for (auto & attribute : m_attributes)
       {
-        attr = m_attributes[j];
+        attr = attribute;
         node = m_animationOldFrame->getNode(0);
         if (attr->getSizeCurValues() > 0)
         {
-          valsFrame.push_back(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex());
+          valsFrame.push_back(static_cast<double>(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex()));
         }
         else
         {
@@ -2503,12 +2448,12 @@ void Simulator::animate()
           valsFrame.push_back(val);
         }
       }
-      attr = 0;
-      node = 0;
+      attr = nullptr;
+      node = nullptr;
 
       glPushMatrix();
-      glTranslatef(x, y, 0.0);
-      glScalef(m_horizontalFrameScale, m_horizontalFrameScale, m_horizontalFrameScale);
+      glTranslatef(static_cast<GLfloat>(x), static_cast<GLfloat>(y), 0.0f);
+      glScalef(static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale));
 
       m_diagram->draw<Visualizing>(pixelSize(), m_attributes, valsFrame);
 
@@ -2519,22 +2464,13 @@ void Simulator::animate()
       y = m_animationEndPosition.y;
 
       valsFrame.clear();
-      /*
+      for (auto & attribute : m_attributes)
       {
-      for ( int j = 0; j < attributes.size(); ++j )
-          valsFrame.push_back(
-              attributes[j]->mapToValue(
-                  keyFrameTo->getNode(0)->getTupleVal(
-                      attributes[j]->getIndex() ) )->getIndex() );
-      }
-      */
-      for (std::size_t j = 0; j < m_attributes.size(); ++j)
-      {
-        attr = m_attributes[j];
+        attr = attribute;
         node = m_animationNewFrame->getNode(0);
         if (attr->getSizeCurValues() > 0)
         {
-          valsFrame.push_back(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex());
+          valsFrame.push_back(static_cast<double>(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex()));
         }
         else
         {
@@ -2542,12 +2478,12 @@ void Simulator::animate()
           valsFrame.push_back(val);
         }
       }
-      attr = 0;
-      node = 0;
+      attr = nullptr;
+      node = nullptr;
 
       glPushMatrix();
-      glTranslatef(x, y, 0.0);
-      glScalef(m_horizontalFrameScale, m_horizontalFrameScale, m_horizontalFrameScale);
+      glTranslatef(static_cast<GLfloat>(x), static_cast<GLfloat>(y), 0.0f);
+      glScalef(static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale));
 
       m_diagram->draw<Visualizing>(pixelSize(), m_attributes, valsFrame);
 
@@ -2558,24 +2494,15 @@ void Simulator::animate()
       // 'new' current frame
       double x = m_animationCurrentPosition.x;
       double y = m_animationCurrentPosition.y;
-      /*
-      {
-      for ( int j = 0; j < attributes.size(); ++j )
-          valsFrame.push_back(
-              attributes[j]->mapToValue(
-                  keyFrameFr->getNode(0)->getTupleVal(
-                      attributes[j]->getIndex() ) )->getIndex() );
-      }
-      */
       Attribute* attr;
       Node* node;
-      for (std::size_t j = 0; j < m_attributes.size(); ++j)
+      for (auto & attribute : m_attributes)
       {
-        attr = m_attributes[j];
+        attr = attribute;
         node = m_animationOldFrame->getNode(0);
         if (attr->getSizeCurValues() > 0)
         {
-          valsFrame.push_back(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex());
+          valsFrame.push_back(static_cast<double>(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex()));
         }
         else
         {
@@ -2583,12 +2510,12 @@ void Simulator::animate()
           valsFrame.push_back(val);
         }
       }
-      attr = 0;
-      node = 0;
+      attr = nullptr;
+      node = nullptr;
 
       glPushMatrix();
-      glTranslatef(x, y, 0.0);
-      glScalef(m_horizontalFrameScale, m_horizontalFrameScale, m_horizontalFrameScale);
+      glTranslatef(static_cast<GLfloat>(x), static_cast<GLfloat>(y), 0.0f);
+      glScalef(static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale));
 
       m_diagram->draw<Visualizing>(pixelSize(), m_attributes, valsFrame);
 
@@ -2599,22 +2526,13 @@ void Simulator::animate()
       y = m_animationEndPosition.y;
 
       valsFrame.clear();
-      /*
+      for (auto & attribute : m_attributes)
       {
-      for ( int j = 0; j < attributes.size(); ++j )
-          valsFrame.push_back(
-              attributes[j]->mapToValue(
-                  keyFrameTo->getNode(0)->getTupleVal(
-                      attributes[j]->getIndex() ) )->getIndex() );
-      }
-      */
-      for (std::size_t j = 0; j < m_attributes.size(); ++j)
-      {
-        attr = m_attributes[j];
+        attr = attribute;
         node = m_animationNewFrame->getNode(0);
         if (attr->getSizeCurValues() > 0)
         {
-          valsFrame.push_back(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex());
+          valsFrame.push_back(static_cast<double>(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex()));
         }
         else
         {
@@ -2622,12 +2540,12 @@ void Simulator::animate()
           valsFrame.push_back(val);
         }
       }
-      attr = 0;
-      node = 0;
+      attr = nullptr;
+      node = nullptr;
 
       glPushMatrix();
-      glTranslatef(x, y, 0.0);
-      glScalef(m_horizontalFrameScale, m_horizontalFrameScale, m_horizontalFrameScale);
+      glTranslatef(static_cast<GLfloat>(x), static_cast<GLfloat>(y), 0.0f);
+      glScalef(static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale), static_cast<GLfloat>(m_horizontalFrameScale));
 
       m_diagram->draw<Visualizing>(pixelSize(), m_attributes, valsFrame, m_animationNewFrameOpacity);
 
@@ -2670,9 +2588,9 @@ void Simulator::onTimer()
         // update new data
         m_currentFrame = m_animationOldFrame;
 
-        m_animationOldFrame = 0;
+        m_animationOldFrame = nullptr;
         delete m_animationNewFrame;
-        m_animationNewFrame = 0;
+        m_animationNewFrame = nullptr;
 
         initFramesPrevNext();
         initBundles();
@@ -2692,9 +2610,9 @@ void Simulator::onTimer()
       // update new data
       m_currentFrame = m_animationOldFrame;
 
-      m_animationOldFrame = 0;
+      m_animationOldFrame = nullptr;
       delete m_animationNewFrame;
-      m_animationNewFrame = 0;
+      m_animationNewFrame = nullptr;
 
       initFramesPrevNext();
       initBundles();

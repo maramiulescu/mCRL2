@@ -7,7 +7,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 /// \file mcrl2/lps/stochastic_state.h
-/// \brief add your file description here.
+/// \brief The class stochastic_state, a probability distribution over states.
 
 #ifndef MCRL2_LPS_STOCHASTIC_STATE_H
 #define MCRL2_LPS_STOCHASTIC_STATE_H
@@ -19,20 +19,6 @@
 
 namespace mcrl2::lps
 {
-
-/* inline
-const data::data_expression& real_zero()
-{
-  static data::data_expression result = data::sort_real::creal(data::sort_int::cint(data::sort_nat::c0()), data::sort_pos::c1());
-  return result;
-}
-
-inline
-const data::data_expression& real_one()
-{
-  static data::data_expression result = data::sort_real::creal(data::sort_int::cint(data::sort_nat::cnat(data::sort_pos::c1())), data::sort_pos::c1());
-  return result;
-} */
 
 // invariant: the elements of states must be unique
 // invariant: the elements of probabilities must be >= 0

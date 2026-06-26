@@ -314,13 +314,10 @@ class ressolve_by_numerical_iteration_directed
       {
         error = std::max(error,std::abs(m_new_solution[i]-m_previous_solution[i]));
       }
-      mCRL2log(log::debug) << "Current solution: " << std::setprecision(m_options.precision) 
+      mCRL2log(log::debug) << "Current solution: " << std::setprecision(static_cast<int>(m_options.precision)) 
                            << detail::evaluate_directed(translated_pres_expressions[m_input_pres.initial_state()],m_new_solution) << "   " 
                            << " Difference with previous iteration: " << error << "\n";     
-// std::cerr << "Next solution0 " << m_new_solution[m_equations[0].variable().name()] << "\n";
-// std::cerr << "Next solution1 " << m_new_solution[m_equations[1].variable().name()] << "\n";
-// std::cerr << "Next solution2 " << m_new_solution[m_equations[2].variable().name()] << "\n";
-      return error<=pow(0.1,m_options.precision);
+      return error<=pow(0.1,static_cast<double>(m_options.precision));
     }
 
     void calculate_new_solution(std::size_t base_equation_index, std::size_t to)
@@ -339,20 +336,16 @@ class ressolve_by_numerical_iteration_directed
     {
       if (base_equation_index<m_equations.size())
       {
-// std::cerr << "RECURSIVE ALGORITHM " << base_equation_index << "---------------------------\n";
         std::size_t i=base_equation_index;
         std::size_t current_rank=m_rank[base_equation_index];
         const bool current_fixed_point_is_mu = (current_rank % 2)==0; // even ranks represent mu's.
         for( ; i<m_equations.size() && m_rank[i]==current_rank ; ++i)
         {
-// std::cerr << "SET " << m_equations[i].variable().name() << "\n";
           const double sol = (current_fixed_point_is_mu?
                                              -1*std::numeric_limits<double>::infinity():
                                              std::numeric_limits<double>::infinity());
           m_new_solution[i] = sol;
-//          m_previous_solution[m_equations[i].variable().name()] = sol;
                                                                   
-// std::cerr << "INITIAL SOLUTION " << m_equations[i].variable().name() << " := " << m_new_solution[m_equations[i].variable().name()] << "\n";
         }
 
         apply_numerical_recursive_algorithm_directed(i);
@@ -371,7 +364,6 @@ class ressolve_by_numerical_iteration_directed
           apply_numerical_recursive_algorithm_directed(i);
           calculate_new_solution(base_equation_index, i);
         } while (!stable_solution_found(base_equation_index, i));
-// std::cerr << "RECURSIVE ALGORITHM TERMINATE " << base_equation_index << "---------------------------\n";
       }
     }; 
 

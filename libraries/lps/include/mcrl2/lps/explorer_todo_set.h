@@ -166,14 +166,14 @@ class highway_todo_set : public todo_set
 
     void insert(const state& s) override
     {
-      if (new_states.size() < N-1)
+      if (new_states.size() < N)
       {
         new_states.insert(s);
       }
       else
       {
-        std::uniform_int_distribution<> distribution(0, n-1);
-        std::size_t k = distribution(generator);
+        std::uniform_int_distribution<std::size_t> distribution(0, n - 1);
+        const std::size_t k = distribution(generator);
         if (k < N)
         {
           assert(N==new_states.size());

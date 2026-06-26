@@ -29,13 +29,13 @@ namespace atermpp
 {
 
 /// \brief A vector class in which aterms can be stored. 
-template < class T, class Alloc = std::allocator<detail::reference_aterm<T> >, bool ThreadSafe = false > 
-class vector : public std::vector< detail::reference_aterm<T>, Alloc >
+template < class T, class Alloc = std::allocator<detail::markable_aterm<T> >, bool ThreadSafe = false > 
+class vector : public std::vector< detail::markable_aterm<T>, Alloc >
 {
 protected:
-  using super = std::vector<detail::reference_aterm<T>, Alloc>;
+  using super = std::vector<detail::markable_aterm<T>, Alloc>;
 
-  detail::generic_aterm_container<std::vector<detail::reference_aterm<T>, Alloc>> container_wrapper;
+  detail::generic_aterm_container<std::vector<detail::markable_aterm<T>, Alloc>> container_wrapper;
 
 public: 
   /// Standard typedefs.
@@ -65,7 +65,7 @@ public:
   {}
 
   vector (size_type n, const value_type& val, const allocator_type& alloc = allocator_type())
-   : super::vector(n, detail::reference_aterm(val), alloc),
+   : super::vector(n, detail::markable_aterm<T>(val), alloc),
      container_wrapper(*this)
   {}
 
@@ -154,11 +154,11 @@ public:
   {
     if constexpr (ThreadSafe) {
       mcrl2::utilities::lock_guard guard = detail::g_thread_term_pool().lock();
-      return super::insert(pos, value);
+      return super::insert(pos, std::move(value));
     }
 
     mcrl2::utilities::shared_guard guard = detail::g_thread_term_pool().lock_shared();
-    return super::insert(pos, value);
+    return super::insert(pos, std::move(value));
   }
   
   iterator insert( const_iterator pos, size_type count, const T& value )
@@ -201,11 +201,11 @@ public:
   {
     if constexpr (ThreadSafe) {
       mcrl2::utilities::lock_guard guard = detail::g_thread_term_pool().lock();
-      return super::emplace(pos, args...);   
+      return super::emplace(pos, std::forward<Args>(args)...);
     }
 
     mcrl2::utilities::shared_guard guard = detail::g_thread_term_pool().lock_shared();
-    return super::emplace(pos, args...);   
+    return super::emplace(pos, std::forward<Args>(args)...);
   }
 
   iterator erase( const_iterator pos )
@@ -246,15 +246,15 @@ public:
 
   void push_back( T&& value )
   {
-    if constexpr (ThreadSafe) 
+    if constexpr (ThreadSafe)
     {
       mcrl2::utilities::lock_guard guard = detail::g_thread_term_pool().lock();
-      super::push_back(value);
-    } 
-    else 
+      super::push_back(std::move(value));
+    }
+    else
     {
       mcrl2::utilities::shared_guard guard = detail::g_thread_term_pool().lock_shared();
-      super::push_back(value);
+      super::push_back(std::move(value));
     }
   }
 
@@ -263,11 +263,11 @@ public:
   {
     if constexpr (ThreadSafe) {
       mcrl2::utilities::lock_guard guard = detail::g_thread_term_pool().lock();
-      return super::emplace_back(args...);  
+      return super::emplace_back(std::forward<Args>(args)...);
     }
 
     mcrl2::utilities::shared_guard guard = detail::g_thread_term_pool().lock_shared();
-    return super::emplace_back(args...);  
+    return super::emplace_back(std::forward<Args>(args)...);
   }
 
   void pop_back()

@@ -54,16 +54,13 @@ public:
     /*! Swaps the elements at indices i and j in the heap. */
     void swap(verti i, verti j);
 
-    /*! Removes the vertex from the queue, if it is present. */
-    //void remove(verti v);
-
     /*! Compares the vertices referred through indices i and j in the heap. */
     int cmp(verti i, verti j);
 
     /*! Checks if the queue satisfies the heap property (used for debugging) */
     bool check();
 
-private:
+public:
   MaxMeasureLiftingStrategy2(const MaxMeasureLiftingStrategy2&) = delete;
   MaxMeasureLiftingStrategy2& operator=(const MaxMeasureLiftingStrategy2&) = delete;
 
@@ -73,10 +70,10 @@ private:
     const Metric metric_;               //!< comparison metric
 
     uint64_t next_id_ = 0;                     //!< number of insertions
-    std::unique_ptr<uint64_t[]> insert_id_;    //!< for each vertex: last insertion time
+    std::unique_ptr<uint64_t[]> insert_id_;    //!< for each vertex: last insertion time // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
 
-    const std::unique_ptr<verti[]> pq_pos_;      //!< for each vertex: position in the p.q. or -1
-    const std::unique_ptr<verti[]> pq_;          //!< priority queue of lifted vertices
+    const std::unique_ptr<verti[]> pq_pos_;      //!< for each vertex: position in the p.q. or -1 // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
+    const std::unique_ptr<verti[]> pq_;          //!< priority queue of lifted vertices // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
     verti pq_size_ = 0;                          //!< priority queue size
 
     std::vector<verti> bumped_;

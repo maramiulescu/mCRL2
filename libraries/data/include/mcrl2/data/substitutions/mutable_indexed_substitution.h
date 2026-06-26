@@ -23,6 +23,7 @@
 
 #include "mcrl2/atermpp/standard_containers/unordered_map.h"
 #include "mcrl2/atermpp/standard_containers/detail/unordered_map_implementation.h"
+#include "mcrl2/data/concepts.h"
 #include "mcrl2/data/data_expression.h"
 
 namespace mcrl2::data {
@@ -65,11 +66,7 @@ public:
   using argument_type = variable_type;
   using result_type = expression_type;
 
-  /// \brief Default constructor
-  mutable_indexed_substitution()
-    : m_variables_in_rhs_set_is_defined(false)
-  {
-  }
+  mutable_indexed_substitution() = default;
 
   mutable_indexed_substitution(const substitution_type& substitution,
                                const bool variables_in_rhs_set_is_defined,
@@ -93,10 +90,7 @@ public:
     }
   }
 
-  static constexpr bool is_trivial()
-  {
-    return false;
-  } 
+  static constexpr bool is_identity_substitution=false;
 
   /// \brief Wrapper class for internal storage and substitution updates using operator()
   struct assignment
@@ -114,7 +108,7 @@ public:
     { }
 
     /// \brief Actual assignment
-    void operator=(const expression_type& e)
+    assignment& operator=(const expression_type& e)
     {
       assert(e.defined());
       const typename substitution_type::iterator i = m_super.m_substitution.find(m_variable);
@@ -124,7 +118,7 @@ public:
         assert(i->first==m_variable);
         if (e==i->second)  // No change in the substitution is required. 
         {
-          return;
+          return *this;
         }
         if (m_super.m_variables_in_rhs_set_is_defined)
         {
@@ -162,6 +156,7 @@ public:
         std::set<variable_type> s1=find_free_variables(e);
         m_super.m_variables_in_rhs.insert(s1.begin(),s1.end());
       }
+      return *this;
     }
   };
 
@@ -188,7 +183,7 @@ public:
   /// \param   v The variable to which the subsitution is applied.
   /// \param   target The target into which the substitution is stored. 
   template <class ResultType>
-  void apply(const variable_type& v, ResultType& target)
+  void apply(const variable_type& v, ResultType& target) const
   {
     static_assert(
         std::is_same_v<ResultType&, expression_type&> || std::is_same_v<ResultType&, atermpp::unprotected_aterm_core&>);
@@ -246,7 +241,7 @@ public:
   }
 
   /// \brief Compare substitutions
-  template <typename Substitution>
+  template <IsSubstitution Substitution>
   bool operator==(const Substitution&) const
   {
     return false;

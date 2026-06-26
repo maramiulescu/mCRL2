@@ -92,13 +92,16 @@
 ///
 /// \author David N. Jansen, Radboud Universiteit, Nijmegen, The Netherlands
 
-#ifndef _COROUTINE_H
-#define _COROUTINE_H
+#ifndef MCRL2_LTS_DETAIL_COROUTINE_H
+#define MCRL2_LTS_DETAIL_COROUTINE_H
 
 #include <cstdlib>       // for std::size_t
 #include <cassert>
 #include <boost/preprocessor.hpp>
 
+// This header implements a coroutine framework entirely through function-like
+// macros; they cannot be replaced by constexpr template functions.
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
 
 
 
@@ -386,4 +389,6 @@ unmatched COROUTINE_WHILE or END_COROUTINE_WHILE. */
                         }                                                     \
                         while (0)
 
-#endif // ifndef _COROUTINE_H
+// NOLINTEND(cppcoreguidelines-macro-usage)
+
+#endif // MCRL2_LTS_DETAIL_COROUTINE_H

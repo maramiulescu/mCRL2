@@ -181,10 +181,6 @@ struct compare_progress_measures_vertex
       return true;
     }
     int n = lexicographical_compare_3way(x->alpha.v.begin(), x->alpha.v.begin() + m + 1, y->alpha.v.begin(), y->alpha.v.begin() + m + 1);
-    //if (n == 0)
-    //{
-    //  return is_even(x->rank) && is_odd(y->rank);
-    //}
     return n < 0;
   }
 };
@@ -232,7 +228,7 @@ class small_progress_measures_algorithm
           }
           else
           {
-            m_beta.push_back(block_size);
+            m_beta.push_back(static_cast<int>(block_size));
           }
           block_size = 0;
           last_rank++;
@@ -247,7 +243,7 @@ class small_progress_measures_algorithm
       }
       else
       {
-        m_beta.push_back(block_size);
+        m_beta.push_back(static_cast<int>(block_size));
       }
 
       // add successor information

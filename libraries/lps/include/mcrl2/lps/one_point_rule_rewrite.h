@@ -7,7 +7,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 /// \file mcrl2/lps/rewriters/one_point_rule_rewrite.h
-/// \brief add your file description here.
+/// \brief Applies the one point rule rewriter to the data expressions in an LPS.
 
 #ifndef MCRL2_LPS_ONE_POINT_RULE_REWRITE_H
 #define MCRL2_LPS_ONE_POINT_RULE_REWRITE_H
@@ -41,7 +41,8 @@ struct one_point_rule_rewrite_builder: public lps::data_expression_builder<one_p
 /// \brief Applies the one point rule rewriter to all embedded data expressions in an object x
 /// \param x an object containing data expressions
 template <typename T>
-void one_point_rule_rewrite(T& x, std::enable_if_t<!std::is_base_of_v<atermpp::aterm, T>>* = nullptr)
+  requires(!std::is_base_of_v<atermpp::aterm, T>)
+void one_point_rule_rewrite(T& x)
 {
   detail::one_point_rule_rewrite_builder f{};
   f.update(x);
@@ -51,7 +52,8 @@ void one_point_rule_rewrite(T& x, std::enable_if_t<!std::is_base_of_v<atermpp::a
 /// \param x an object containing data expressions
 /// \return the rewrite result
 template <typename T>
-T one_point_rule_rewrite(const T& x, std::enable_if_t<std::is_base_of_v<atermpp::aterm, T>>* = nullptr)
+  requires(std::is_base_of_v<atermpp::aterm, T>)
+T one_point_rule_rewrite(const T& x)
 {
   T result;
   detail::one_point_rule_rewrite_builder f{};

@@ -163,21 +163,25 @@ class rewriter: public basic_rewriter<data_expression>
       return (*this)(d, empty_substitution());
     }
 
+    /// \brief Rewrites a data expression.
+    /// \param[in] d A data expression.
+    /// \return The normal form of d.
+    void operator()(data_expression& result, const data_expression& d) const
+    {
+      (*this)(result, d, empty_substitution());
+    }
+
     /// \brief Rewrites the data expression d, and on the fly applies a substitution function.
     /// to data variables.
     /// \param[in] d A data expression.
     /// \param[in] sigma A substitution function.
     /// \return The normal form of the term.
-    template <typename SubstitutionFunction>
+    template <IsSubstitution SubstitutionFunction>
     data_expression operator()(const data_expression& d, const SubstitutionFunction& sigma) const
     {
-      substitution_type sigma_with_iterator;
-      std::set<variable> free_variables = data::find_free_variables(d);
-      for(const variable& free_variable: free_variables)
-      {
-        sigma_with_iterator[free_variable] = sigma(free_variable);
-      }
-      return (*this)(d, sigma_with_iterator);
+      data_expression result;
+      (*this)(result, d, sigma);
+      return result;
     }
 
     /// \brief Rewrites the data expression d, and on the fly applies a substitution function.
@@ -185,7 +189,7 @@ class rewriter: public basic_rewriter<data_expression>
     /// \param[out] result The normal form of the term is placed in result.
     /// \param[in] d A data expression.
     /// \param[in] sigma A substitution function.
-    template <typename SubstitutionFunction>
+    template <IsSubstitution SubstitutionFunction>
     void operator()(data_expression& result, const data_expression& d, const SubstitutionFunction& sigma) const
     {
       substitution_type sigma_with_iterator;

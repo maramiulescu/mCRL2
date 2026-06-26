@@ -10,24 +10,22 @@ Traversal functions
 The mCRL2 Library contains a range of generic traversal functions. There are
 different types of travelsals possible:
 
-.. table Traversal types
+.. table:: Traversal types
 
-   =======================  ====================================================================
-   Type                     Meaning
-   =======================  ====================================================================
-   normal traversal         Traverse an object completely
-   binding aware traversal  Traverse an object completely, while maintaining the bound variables
-   sort traversal           Traverses only the parts of an object that contain sorts
-   =======================  ====================================================================
+   ================  ========================================================
+   Type              Meaning
+   ================  ========================================================
+   normal traversal  Traverse an object completely
+   sort traversal    Traverses only the parts of an object that contain sorts
+   ================  ========================================================
 
 
 Each library defines classes that support these traversal types, namely
-`traverser`, `binding_aware_traverser` and `builder`. They are
-the most commonly occurring traversals. When writing an algorithm that needs to
-traverse an object, one can usually implement it using one of the predefined
-traversal classes.
+``traverser`` and ``builder``. They are the most commonly occurring traversals.
+When writing an algorithm that needs to traverse an object, one can usually
+implement it using one of the predefined traversal classes.
 
-When deriving from a traverser class, the `enter` and `leave` functions must be made visible using
+When deriving from a traverser class, the ``enter`` and ``leave`` functions must be made visible using
 
 .. code-block:: c++
 
@@ -37,7 +35,7 @@ When deriving from a traverser class, the `enter` and `leave` functions must be 
 .. note::
 
    For Visual C++ the following workaround must be applied as well, otherwise it will
-   complain about ambiguities of `operator()`.
+   complain about ambiguities of ``operator()``.
 
 .. code-block:: c++
 
@@ -65,24 +63,21 @@ The traverser classes have the following structure:
    template < typename Derived >
    class traverser
    {
-     public:     
+     public:
        void operator()(function_symbol const& e);
        void operator()(data_expression const& e);
        ...
    };
 
    template < typename Derived >
-   class binding_aware_traverser : public traverser< Derived >;
-
-   template < typename Derived >
    class sort_traverser : public traverser< Derived >;
         
-The default implementation for `operator()` calls the function `enter` upon
-entering and `leave` upon leaving an object. By default these functions have an
+The default implementation for ``operator()`` calls the function ``enter`` upon
+entering and ``leave`` upon leaving an object. By default these functions have an
 empty body, so they can be optimized away by the compiler. The user can override
 these functions in a base class to add behavior. If an object has any sub objects,
-they can be visited by applying the `operator()` function to them. In the example
-below this is done with the `name()` attribute of a `variable`.
+they can be visited by applying the ``operator()`` function to them. In the example
+below this is done with the ``name()`` attribute of a ``variable``.
 
 .. code-block:: c++
 
@@ -96,30 +91,13 @@ below this is done with the `name()` attribute of a `variable`.
    }
 
 Note that the `Curiously recurring template pattern <http://en.wikipedia.org/wiki/Curiously_recurring_template_pattern>`_
-needs to be applied in the implementation of `traverser`, since it needs access
+needs to be applied in the implementation of ``traverser``, since it needs access
 to protected interfaces of derived classes.
 
-The traversal framework can be reused in other libraries.
-The LPS Library defines classes `lps_data_traverser` and `lps_binding_aware_traverser` like this:
-
-.. code-block:: c++
-
-   template < typename Derived, template < class > class Traverser = mcrl2::data::detail::traverser >
-   class lps_data_traverser : public Traverser< Derived >
-   {
-     public:
-       void operator()(const multi_action& a);
-       void operator()(const linear_process& p);
-       ...
-   };
-       
-   template < typename Derived >
-   struct lps_binding_aware_traverser : public lps::detail::lps_data_traverser< Derived, data::detail::binding_aware_traverser >
-
-.. warning::
-
-  The traversal classes have only been partly defined for the LPS Library
-  and not yet for the Process and PBES Library.
+The traversal framework can be reused in other libraries. Each library that
+needs traversal support defines its own traverser classes in the same way,
+extending the base ``traverser`` template with overloads for its specific
+types.
 
 Examples
 ^^^^^^^^
@@ -159,94 +137,70 @@ The mCRL2 Library contains a range of generic find functions. These are:
 
 .. table:: Generic find functions
 
-   =======================  ===============================================
-   Function                 Meaning
-   =======================  ===============================================
-   `find_basic_sorts`       Finds basic sorts that occur in an object
-   `find_data_expressions`  Finds data expressions that occur in an object
-   `find_free_variables`    Finds free variables that occur in an object
-   `find_identifiers`       Finds identifiers that occur in an object
-   `find_sort_expressions`  Finds sort expressions that occur in an object
-   `find_variables`         Finds variables that occur in an object
-   =======================  ===============================================
+   =========================  ==============================================
+   Function                   Meaning
+   =========================  ==============================================
+   ``find_basic_sorts``       Finds basic sorts that occur in an object
+   ``find_data_expressions``  Finds data expressions that occur in an object
+   ``find_free_variables``    Finds free variables that occur in an object
+   ``find_identifiers``       Finds identifiers that occur in an object
+   ``find_sort_expressions``  Finds sort expressions that occur in an object
+   ``find_variables``         Finds variables that occur in an object
+   =========================  ==============================================
 
 These functions can be applied to a wide range of objects in the mCRL2 Library,
-ranging from `data_expression` to `action_summand`.
+ranging from ``data_expression`` to ``action_summand``.
 
 .. table:: Find functions for data specifications
 
-   ==================  ===================================================================
-   Function            Meaning
-   ==================  ===================================================================
-   `find_constructor`  Finds a constructor
-   `find_equations`    Finds equations with a given expression as head on one of its sides
-   `find_mapping`      Finds a mapping
-   `find_sort`         Finds a sort
-   ==================  ===================================================================
+   ====================  ===================================================================
+   Function              Meaning
+   ====================  ===================================================================
+   ``find_constructor``  Finds a constructor
+   ``find_equations``    Finds equations with a given expression as head on one of its sides
+   ``find_mapping``      Finds a mapping
+   ``find_sort``         Finds a sort
+   ====================  ===================================================================
 
 .. table:: Generic replace functions
 
-   =================================  ==================================================================================================================================
-   Function                           Meaning
-   =================================  ==================================================================================================================================
-   `replace_sort_expressions`         Applies a substitution to sort expressions that occur in an object. Optionally it can be applied to nested expressions.
-   `replace_variables`                Applies a substitution to variables that occur in an object within the context of a data expression.
-   `replace_free_variables`           Applies a substitution to free variables that occur in an object within the context of a data expression.
-   `replace_data_expressions`         Applies a substitution to data expressions that occur in an object. Optionally it can be applied to nested expressions. 
-   `replace_propositional_variables`  Applies a substitution to propositional variable instantiations that occur in an object within the context of a pbes expression.
-   =================================  ==================================================================================================================================
+   ===================================  ================================================================================================================================
+   Function                             Meaning
+   ===================================  ================================================================================================================================
+   ``replace_sort_expressions``         Applies a substitution to sort expressions that occur in an object. Optionally it can be applied to nested expressions.
+   ``replace_variables``                Applies a substitution to variables that occur in an object within the context of a data expression.
+   ``replace_free_variables``           Applies a substitution to free variables that occur in an object within the context of a data expression.
+   ``replace_data_expressions``         Applies a substitution to data expressions that occur in an object. Optionally it can be applied to nested expressions.
+   ``replace_propositional_variables``  Applies a substitution to propositional variable instantiations that occur in an object within the context of a pbes expression.
+   ===================================  ================================================================================================================================
 
 .. table:: Other generic traverser based functions
 
-   =========================  ==========================================================================================
-   Function                   Meaning
-   =========================  ==========================================================================================
-   `translate_user_notation`  Applies a transformation to numbers, sets and bags that is needed after parsing.
-   `normalize_sorts`          Brings embedded sorts into normal form.
-   `rewrite`                  Applies a rewriter to embedded expressions, optionally in combination with a substitution.
-   =========================  ==========================================================================================
+   ===========================  ==========================================================================================
+   Function                     Meaning
+   ===========================  ==========================================================================================
+   ``translate_user_notation``  Applies a transformation to numbers, sets and bags that is needed after parsing.
+   ``normalize_sorts``          Brings embedded sorts into normal form.
+   ``rewrite``                  Applies a rewriter to embedded expressions, optionally in combination with a substitution.
+   ===========================  ==========================================================================================
 
 
-These functions can be applied to a wide range of objects in the mCRL2 Library, ranging from `data::data_expression` to
-`lps::action_summand`. Each library has it's own overloads of these functions. For example to find data variables in an
-object of the LPS library, the function `lps::find_variables` must be used.
+These functions can be applied to a wide range of objects in the mCRL2 Library, ranging from ``data::data_expression`` to
+``lps::action_summand``. Each library has it's own overloads of these functions. For example to find data variables in an
+object of the LPS library, the function ``lps::find_variables`` must be used.
 
 .. warning::
 
   It is important to choose the right overload of generic traverser functions. Failing to do so may
   result in compilation errors, or runtime exceptions.
 
-Implementation details
-""""""""""""""""""""""
-The implementation of find functions is not finished yet. It has to be figured out
-how to extend the functionality of the Data Library to other libraries.
-The file `mcrl2/lps/find.h` currently contains this:
 
-.. code-block:: c++
 
-   /// \brief Returns all data variables that occur in a range of expressions
-   /// \param[in] container a container with expressions
-   /// \return All data variables that occur in the term t
-   template <typename Container, typename OutputIterator >
-   void find_free_variables(Container const& container, OutputIterator o)
-   {
-     data::detail::make_free_variable_find_helper< lps::detail::lps_binding_aware_traverser >(o)(container);
-   }
-
-   /// \brief Returns all data variables that occur in a range of expressions
-   /// \param[in] container a container with expressions
-   /// \return All data variables that occur in the term t
-   /// TODO replace uses by data::find_free_variables
-   template <typename Container >
-   std::set< data::variable > find_free_variables(Container const& container)
-   { ... }
-
-                                                                                                                                                                                                                        
 Generic programming techniques
 ------------------------------
 
-The file =mcrl2/data/detail/container_utility.h= contains two utility functions
-`enable_if_container` and `disable_if_container` for determining if a type is a container type.
+The file ``mcrl2/data/detail/container_utility.h`` contains two utility functions
+``enable_if_container`` and ``disable_if_container`` for determining if a type is a container type.
 It can be used to create an interface that does different things for containers and for
 other types:
 
@@ -336,7 +290,7 @@ semantics.
    ==========  ===========
    Expression  Return Type
    ==========  ===========
-   s(v)        E
+   ``s(v)``    E
    ==========  ===========
 
 A class or built-in type X models the Mutable Substitution concept if it models
@@ -346,14 +300,14 @@ semantics.
 
 .. table:: Mutable Substitution Requirements (in addition to Substitution)
 
-   ==========  ===========  ==============================
-   Expression  Return Type  Assertion/ Pre-/Post-condition
-   ==========  ===========  ==============================
-   s\[v\] = e               post: s(v) == e
-   s\[v\] = v               post: s(v) == v
-   ==========  ===========  ==============================
+   ============  ===========  ==============================
+   Expression    Return Type  Assertion/ Pre-/Post-condition
+   ============  ===========  ==============================
+   ``s[v] = e``               post: s(v) == e
+   ``s[v] = v``               post: s(v) == v
+   ============  ===========  ==============================
 
-The `mutable_substition` template class implements the Mutable Substitution
+The ``mutable_substition`` template class implements the Mutable Substitution
 concept. In addition, it has a number additional member functions in common
-with a `std::map`.
+with a ``std::map``.
 

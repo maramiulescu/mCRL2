@@ -398,6 +398,7 @@ class Pbes2boolTest(PbesTest):
             self.add_command_line_options('t6', ["--threads=4"])
             self.add_command_line_options('t7', ["--threads=4"])
             self.add_command_line_options('t8', ["--threads=4"])
+            self.add_command_line_options('t9', ["--threads=4"])
 
 class Pres2boolTest(ProcessTest):
     def __init__(self, name, settings):
@@ -563,7 +564,8 @@ available_tests = {
     'pbessolve-counter-example-optimization-5'    : lambda name, settings: Pbes2bool_counter_exampleTest(name, 5, settings)                            ,
     'pbessolve-counter-example-optimization-6'    : lambda name, settings: Pbes2bool_counter_exampleTest(name, 6, settings)                            ,
     'pbessolve-counter-example-optimization-7'    : lambda name, settings: Pbes2bool_counter_exampleTest(name, 7, settings)                            ,
-    'pbessolve-parelm'                            : lambda name, settings: Pbes2bool_counter_example_parelmTest(name, settings)                        ,
+    # Reenable when the issues have been resolved.
+    # 'pbessolve-parelm'                            : lambda name, settings: Pbes2bool_counter_example_parelmTest(name, settings)                        ,
     'pbesstategraph'                              : lambda name, settings: PbesstategraphTest(name, settings)                                          ,
     'pbes-unify-parameters'                       : lambda name, settings: Pbes_unify_parametersTest(name, settings)                                   ,
     'pbes-srf'                                    : lambda name, settings: Pbes_srfTest(name, settings)                                                ,
@@ -572,8 +574,8 @@ available_tests = {
 
 available_experimental_tests = {
     # ML: Disable until the tests pass.
-    # 'ltscombine'                                  : lambda name, settings: LtsCombineTest(name, False, settings)                                       ,
-    # 'ltscombine-parallel'                         : lambda name, settings: LtsCombineTest(name, True, settings)                                        ,
+    'ltscombine'                                  : lambda name, settings: LtsCombineTest(name, False, settings)                                       ,
+    'ltscombine-parallel'                         : lambda name, settings: LtsCombineTest(name, True, settings)                                        ,
     'pbesparelm'                                  : lambda name, settings: PbesparelmTest(name, settings)                                              ,
     'pressolve'                                   : lambda name, settings: Pres2boolTest(name, settings)                                               ,
     'pbespor2'                                    : lambda name, settings: Pbespor2Test(name, settings)                                                ,
@@ -589,8 +591,7 @@ if shutil.which("z3") is not None:
 # These test do not work on Windows due to dependencies.
 if os.name != 'nt':
     available_tests.update({'pbessolvesymbolic' : lambda name, settings: PbessolvesymbolicTest(name, [], settings) })
-    # This test fails because of data races.
-    # available_tests.update({'pbessolvesymbolic-parallel' : lambda name, settings: PbessolvesymbolicTest(name, ['--threads=8'], settings) })
+    available_tests.update({'pbessolvesymbolic-parallel' : lambda name, settings: PbessolvesymbolicTest(name, ['--threads=8'], settings) })
     available_tests.update({'pbessolvesymbolic-total' : lambda name, settings: PbessolvesymbolicTest(name, ['--total'], settings) })
     available_tests.update({'pbessolvesymbolic-chaining' : lambda name, settings: PbessolvesymbolicTest(name, ['--chaining'], settings) })
     available_tests.update({'pbessolvesymbolic-total-chaining' : lambda name, settings: PbessolvesymbolicTest(name, ['--total', '--chaining'], settings) })

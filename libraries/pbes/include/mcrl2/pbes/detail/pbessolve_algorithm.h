@@ -108,7 +108,7 @@ class pbessolve_tool
 
     pbessolve_options options;
     int m_short_strategy = 0;
-    partial_solve_strategy m_long_strategy = partial_solve_strategy::no_optimisation;
+    partial_solve_strategy m_long_strategy = partial_solve_strategy::none;
     std::string lpsfile;
     std::string ltsfile;
     std::string evidence_file;
@@ -176,8 +176,8 @@ class pbessolve_tool
           "--strategy)",
           'l');
       desc.add_hidden_option("no-replace-constants-by-variables", "Do not move constant expressions to a substitution.");
-      desc.add_hidden_option("aggressive", "Apply optimizations 4 and 5 at every iteration.");
-      desc.add_hidden_option("prune-todo-alternative", "Use a variation of todo list pruning.");
+      desc.add_option("frequent", "Apply partial solving and pruning more frequently. ");
+      desc.add_hidden_option("aggressive", "Apply partial solving and pruning at every iteration. Slow, and primarily intended for testing purposes.");
       desc.add_option("original-pbes",
         utilities::make_file_argument("NAME"),
         "In the second round of solving, use a different PBES than in the first round. "
@@ -197,10 +197,9 @@ class pbessolve_tool
         !parser.has_option("no-replace-constants-by-variables");
     options.remove_unused_rewrite_rules =
         !parser.has_option("no-remove-unused-rewrite-rules");
+    options.prune_and_solve_frequently = parser.has_option("frequent");
     options.aggressive = parser.has_option("aggressive");
     options.prune_todo_list = parser.has_option("prune-todo-list");
-    options.prune_todo_alternative =
-        parser.has_option("prune-todo-alternative");
     options.exploration_strategy =
         parser.option_argument_as<mcrl2::pbes_system::search_strategy>(
             "search-strategy");
@@ -302,7 +301,7 @@ class pbessolve_tool
       if (it == X_hatparams.end())
       {
         mCRL2log(log::debug) << params[i] << " is redundant" << std::endl;
-        R.insert(i);
+        R.insert(static_cast<int>(i));
       }
     }
     return R;
@@ -448,7 +447,7 @@ class pbessolve_tool
     }
 
     // Handle tool options here because now we know whether the PBES has counter example information.
-    if (m_long_strategy > partial_solve_strategy::no_optimisation)
+    if (m_long_strategy > partial_solve_strategy::none)
     {
       options.optimization = m_long_strategy;
     }
@@ -484,17 +483,17 @@ class pbessolve_tool
     }
     if (options.prune_todo_list && options.optimization < partial_solve_strategy::propagate_solved_equations_using_substitution)
     {
-      mCRL2log(log::warning) << "Option --prune-todo-list has no effect for "
-                                "strategies less than 2."
+      mCRL2log(log::warning) << "Option --prune-todo-list has no effect for " 
+                             << "strategies less than 2."
                              << std::endl;
     }
     if (options.optimization == partial_solve_strategy::detect_winning_loops_original && has_counter_example)
     {
-      throw mcrl2::runtime_error("optimisation 8 cannot be used with a PBES that has counter example information");
+      throw mcrl2::runtime_error("Optimisation detect_winning_loops_original cannot be used with a PBES that has counter example information.");
     }
     if (options.optimization == partial_solve_strategy::detect_winning_loops_original && options.number_of_threads > 1)
     {
-      throw mcrl2::runtime_error("optimisation 8 does not work correctly with multiple threads, using 1 thread instead.");
+      throw mcrl2::runtime_error("Optimisation detect_winning_loops_original (8) does not work correctly with multiple threads.");
     }
 
     mCRL2log(log::log_level_t::verbose) << "Using optimisation " << options.optimization << "\n";

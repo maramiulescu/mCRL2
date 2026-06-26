@@ -18,6 +18,7 @@
 #include <sylvan_ldd.hpp>
 
 #include <random>
+#include <utility>
 #include <vector>
 
 namespace mcrl2::symbolic
@@ -33,7 +34,7 @@ inline std::mt19937& gen()
 /// \brief Generate a random (state) vector.
 inline std::vector<std::uint32_t> random_vector(std::size_t length, std::size_t max_value)
 {    
-  std::uniform_int_distribution<> dist(0, max_value);
+  std::uniform_int_distribution<> dist(0, static_cast<int>(max_value));
 
   std::vector<std::uint32_t> result(length);
   for (std::size_t i = 0; i < length; ++i)
@@ -61,7 +62,7 @@ inline sylvan::ldds::ldd random_set(std::size_t amount, std::size_t length, std:
 /// \brief Returns a random subset of U.
 inline sylvan::ldds::ldd random_subset(const sylvan::ldds::ldd& U, std::size_t amount)
 {
-    std::uniform_int_distribution<> dist(0, satcount(U));
+    std::uniform_int_distribution<> dist(0, static_cast<int>(satcount(U)));
 
     std::vector<std::vector<std::uint32_t>> contained = ldd_solutions(U);
     std::vector<std::vector<std::uint32_t>> result_vector;
@@ -70,7 +71,7 @@ inline sylvan::ldds::ldd random_subset(const sylvan::ldds::ldd& U, std::size_t a
     std::size_t added = 0;
     for (const auto& vector : contained)
     {
-      if (static_cast<std::size_t>(dist(gen())) <= amount)
+      if (std::cmp_less_equal(dist(gen()), amount))
       {
         result_vector.push_back(vector);
         ++added;
@@ -121,7 +122,6 @@ inline sylvan::ldds::ldd to_ldd(const std::set<std::vector<std::uint32_t>>& vect
 /// \brief Initialise the Sylvan library.
 inline void initialise_sylvan()
 {
-  //mcrl2::log::logger::set_reporting_level(mcrl2::log::debug);
   lace_start(1, 0);
   sylvan::sylvan_set_limits(static_cast<size_t>(1024) * 1024 * 1024, 6, 6);
   sylvan::sylvan_init_package();

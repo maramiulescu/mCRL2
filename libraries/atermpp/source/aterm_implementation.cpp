@@ -11,6 +11,8 @@
 #include "mcrl2/atermpp/detail/global_aterm_pool.h"
 #include "mcrl2/utilities/shared_mutex.h"
 
+#include <array>
+
 using namespace atermpp;
 using namespace atermpp::detail;
 
@@ -27,17 +29,35 @@ void atermpp::add_deletion_hook(const function_symbol& function, term_callback c
 
 namespace atermpp::detail
 {
+
+// Pointer to the main thread's pool.  Set once, on the first call to
+// g_thread_term_pool() (which is always from the main thread in practice).
+// Used by ~thread_aterm_pool to transfer orphaned entries when a worker
+// thread exits.
+thread_aterm_pool* g_main_thread_pool = nullptr;
+
 /// \brief A reference to the thread local term pool storage
 thread_aterm_pool& g_thread_term_pool()
 {
 #ifdef MCRL2_ENABLE_MULTITHREADING
   static_assert(mcrl2::utilities::detail::GlobalThreadSafe);
-  thread_local thread_aterm_pool instance(g_aterm_pool_instance);
-#else 
+  thread_local thread_aterm_pool instance(g_aterm_pool_instance());
+#else
   static_assert(!mcrl2::utilities::detail::GlobalThreadSafe);
-  static thread_aterm_pool instance(g_aterm_pool_instance);
+  static thread_aterm_pool instance(g_aterm_pool_instance());
 #endif
+  // Record the main-thread pool on first call.  This is always safe: the
+  // main thread initialises its pool before spawning any worker threads.
+  if (g_main_thread_pool == nullptr)
+  {
+    g_main_thread_pool = &instance;
+  }
   return instance;
+}
+
+mcrl2::utilities::shared_guard lock_shared_aterm_pool()
+{
+  return g_thread_term_pool().lock_shared();
 }
 
 } // end namespace atermpp::detail
@@ -50,4 +70,4 @@ aterm_ostream::~aterm_ostream() = default;
 
 /// Definition of the extern global term pool.
 alignas(aterm_pool)
-std::byte atermpp::detail::g_aterm_pool_storage[sizeof(aterm_pool)] = {};     
+std::array<std::byte, sizeof(aterm_pool)> atermpp::detail::g_aterm_pool_storage = {};     

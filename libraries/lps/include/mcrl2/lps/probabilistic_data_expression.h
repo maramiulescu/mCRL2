@@ -60,7 +60,7 @@ namespace detail
     return result;
   }
 
-  inline const data::data_expression make_nat_bnn(const utilities::big_natural_number& b)
+  inline data::data_expression make_nat_bnn(const utilities::big_natural_number& b)
   {
     std::size_t pos=b.size();
     if (pos==0)
@@ -81,7 +81,7 @@ namespace detail
     return result;
   }
 
-  inline const data::data_expression make_pos_bnn(const utilities::big_natural_number& b)
+  inline data::data_expression make_pos_bnn(const utilities::big_natural_number& b)
   {
     std::size_t pos=b.size();
     assert(pos>0);
@@ -160,11 +160,6 @@ class probabilistic_data_expression: public data::data_expression
     {
       static data::rewriter m_r(data_specification_with_real());
       return m_r;
-    }
-
-    inline static std::size_t to_number_t(const std::string& s)
-    {
-      return std::stoul(s);
     }
 
 #ifdef MCRL2_ENABLE_MACHINENUMBERS

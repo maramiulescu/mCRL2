@@ -50,7 +50,7 @@ class symbolic_exploration_algorithm
         return;
       }
       assert (m_variables.size() >= v.size());
-      m_variables.erase(m_variables.end() - v.size(), m_variables.end());
+      m_variables.erase(m_variables.end() - static_cast<std::ptrdiff_t>(v.size()), m_variables.end());
     }
 
     /// \brief Concatenates two variable lists
@@ -214,10 +214,6 @@ class symbolic_exploration_algorithm
       {
         result = x;
       }
-      //else
-      //{
-      //  throw mcrl2::runtime_error("unknown pbes expression encountered in expr_or: " + pbes_system::pp(x));
-      //}
       mCRL2log(log::debug) << "\n<expr_or> " << pbes_system::pp(x) << " -> " << pbes_system::pp(result);
       pop_variables(v);
       return result;
@@ -250,10 +246,6 @@ class symbolic_exploration_algorithm
       {
         result = x;
       }
-      //else
-      //{
-      //  throw mcrl2::runtime_error("unknown pbes expression encountered in expr_and: " + pbes_system::pp(x));
-      //}
       mCRL2log(log::debug) << "\n<expr_and> " << pbes_system::pp(x) << " -> " << pbes_system::pp(result);
       pop_variables(v);
       return result;

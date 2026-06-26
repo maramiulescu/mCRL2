@@ -37,7 +37,7 @@ ArcDiagram::ArcDiagram(
 {
   idxInitStLeaves    = NON_EXISTING;
 
-  diagram = 0;
+  diagram = nullptr;
 
   connect(&m_animationTimer, SIGNAL(timeout()), this, SLOT(animate()));
 
@@ -64,7 +64,7 @@ ArcDiagram::ArcDiagram(
 
 ArcDiagram::~ArcDiagram()
 {
-  diagram = 0;
+  diagram = nullptr;
   clearSettings();
 }
 
@@ -75,9 +75,9 @@ ArcDiagram::~ArcDiagram()
 void ArcDiagram::getAttrsTree(std::vector< std::size_t >& idcs)
 {
   idcs.clear();
-  for (std::size_t i = 0; i < attrsTree.size(); ++i)
+  for (auto & i : attrsTree)
   {
-    idcs.push_back(attrsTree[i]->getIndex());
+    idcs.push_back(i->getIndex());
   }
 }
 
@@ -88,9 +88,9 @@ void ArcDiagram::getAttrsTree(std::vector< std::size_t >& idcs)
 void ArcDiagram::setAttrsTree(const std::vector< std::size_t > idcs)
 {
   attrsTree.clear();
-  for (std::size_t i = 0; i < idcs.size(); ++i)
+  for (std::size_t idx : idcs)
   {
-    attrsTree.push_back(m_graph->getAttribute(idcs[i]));
+    attrsTree.push_back(m_graph->getAttribute(idx));
   }
 }
 
@@ -105,16 +105,16 @@ void ArcDiagram::setDiagram(Diagram* dgrm)
 void ArcDiagram::hideAllDiagrams()
 {
   {
-    for (std::size_t i = 0; i < showDgrm.size(); ++i)
+    for (auto && i : showDgrm)
     {
-      showDgrm[i] = false;
+      i = false;
     }
   }
 
   {
-    for (std::size_t i = 0; i < markBundles.size(); ++i)
+    for (auto && markBundle : markBundles)
     {
-      markBundles[i] = false;
+      markBundle = false;
     }
   }
 }
@@ -156,9 +156,9 @@ void ArcDiagram::markBundle(const std::size_t& idx)
 
 void ArcDiagram::unmarkBundles()
 {
-  for (std::size_t i = 0; i < markBundles.size(); ++i)
+  for (auto && markBundle : markBundles)
   {
-    markBundles[i] = false;
+    markBundle = false;
   }
 }
 
@@ -230,7 +230,7 @@ template <Visualizer::Mode mode> void ArcDiagram::drawBundles()
 template <Visualizer::Mode mode>  void ArcDiagram::drawLeaves()
 {
   int segs = SEGM_HINT;
-  Cluster* clust = 0;
+  Cluster* clust = nullptr;
 
   if constexpr (mode == Visualizing)
   {
@@ -255,7 +255,7 @@ template <Visualizer::Mode mode>  void ArcDiagram::drawLeaves()
       VisUtils::fillEllipse(x+0.2*radLeaves, y-0.2*radLeaves, radLeaves, radLeaves, segs);
     }
 
-    if (clust != 0 && clust->getAttribute() != 0)
+    if (clust != nullptr && clust->getAttribute() != nullptr)
       VisUtils::setColor(calcColor(clust->getAttrValIdx(), clust->getAttribute()->getSizeCurValues()));
     else if constexpr (mode == Visualizing)
       VisUtils::setColor(Qt::white);
@@ -283,7 +283,7 @@ template <Visualizer::Mode mode>  void ArcDiagram::drawLeaves()
     }
 
     VisUtils::disableLineAntiAlias();
-    clust = 0;
+    clust = nullptr;
   }
 }
 
@@ -291,7 +291,7 @@ template <Visualizer::Mode mode>  void ArcDiagram::drawLeaves()
 template <Visualizer::Mode mode> void ArcDiagram::drawTree()
 {
   int segs = SEGM_HINT;
-  Cluster* clust = 0;
+  Cluster* clust = nullptr;
   QColor colFill = Qt::white;
 
   if constexpr (mode == Visualizing)
@@ -319,7 +319,7 @@ template <Visualizer::Mode mode> void ArcDiagram::drawTree()
         clust   = mapPosToClust[i][j];
         colFill = VisUtils::lightGray;
 
-        if (clust != 0 && clust->getAttribute() != 0)
+        if (clust != nullptr && clust->getAttribute() != nullptr)
         {
           colFill = calcColor(clust->getAttrValIdx(), clust->getAttribute()->getSizeCurValues());
         }
@@ -390,7 +390,7 @@ template <Visualizer::Mode mode> void ArcDiagram::drawTreeLvls()
         double xRgt =  posTreeTopLft[i][0].x - 2.0*radLeaves;
 
         VisUtils::setColor(settings->textColor.value());
-        VisUtils::drawLabelRight(texCharId, xLft, yTxt, settings->textSize.value()*pix/CHARHEIGHT, lbl);
+        VisUtils::drawLabelRight(&texCharId[0], xLft, yTxt, settings->textSize.value()*pix/CHARHEIGHT, lbl);
         VisUtils::setColor(VisUtils::lightGray);
         VisUtils::drawLine(xLft, xRgt, yLin, yLin);
 
@@ -399,7 +399,7 @@ template <Visualizer::Mode mode> void ArcDiagram::drawTreeLvls()
         xRgt = 0.5*wth - radLeaves;
 
         VisUtils::setColor(settings->textColor.value());
-        VisUtils::drawLabelLeft(texCharId, xRgt, yTxt, settings->textSize.value()*pix/CHARHEIGHT, lbl);
+        VisUtils::drawLabelLeft(&texCharId[0], xRgt, yTxt, settings->textSize.value()*pix/CHARHEIGHT, lbl);
         VisUtils::setColor(VisUtils::lightGray);
         VisUtils::drawLine(xLft, xRgt, yLin, yLin);
       }
@@ -412,7 +412,7 @@ template <Visualizer::Mode mode> void ArcDiagram::drawBarTree()
 {
   if (posBarTreeTopLft.size() > 1)
   {
-    Cluster* clust = 0;
+    Cluster* clust = nullptr;
     QColor colFill = Qt::lightGray;
 
     if constexpr (mode == Visualizing)
@@ -438,7 +438,7 @@ template <Visualizer::Mode mode> void ArcDiagram::drawBarTree()
         {
           // fill color
           clust   = mapPosToClust[i][j];
-          if (clust != 0 && clust->getAttribute() != 0)
+          if (clust != nullptr && clust->getAttribute() != nullptr)
           {
             colFill = calcColor(clust->getAttrValIdx(), clust->getAttribute()->getSizeCurValues());
           }
@@ -473,7 +473,7 @@ template <Visualizer::Mode mode> void ArcDiagram::drawBarTree()
     {
       VisUtils::disableBlending();
       VisUtils::disableLineAntiAlias();
-      clust = 0;
+      clust = nullptr;
     }
   }
 }
@@ -494,17 +494,10 @@ template <Visualizer::Mode mode> void ArcDiagram::drawDiagrams()
 
         glPushName((GLuint) i);
         glPushMatrix();
-        glTranslatef(x, y, 0.0);
+        glTranslatef(static_cast<GLfloat>(x), static_cast<GLfloat>(y), 0.0f);
         glScalef(0.2f, 0.2f, 0.2f);
 
         std::vector< double > vals;
-        /*
-        for ( int j = 0; j < attrsDgrm[i].size(); ++j )
-            vals.push_back(
-                attrsDgrm[i][j]->mapToValue(
-                    framesDgrm[i][frameIdxDgrm[i]]->getNode(0)->getTupleVal(
-                        attrsDgrm[i][j]->getIndex() ) )->getIndex() );
-        */
         Attribute* attr;
         Node* node;
         for (std::size_t j = 0; j < attrsDgrm[i].size(); ++j)
@@ -513,7 +506,7 @@ template <Visualizer::Mode mode> void ArcDiagram::drawDiagrams()
           node = framesDgrm[i][frameIdxDgrm[i]]->getNode(0);
           if (attr->getSizeCurValues() > 0)
           {
-            vals.push_back(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex());
+            vals.push_back(static_cast<double>(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex()));
           }
           else
           {
@@ -521,8 +514,8 @@ template <Visualizer::Mode mode> void ArcDiagram::drawDiagrams()
             vals.push_back(val);
           }
         }
-        attr = 0;
-        node = 0;
+        attr = nullptr;
+        node = nullptr;
 
         diagram->draw<mode>(pixelSize(), attrsDgrm[i], vals);
         vals.clear();
@@ -590,8 +583,8 @@ template <Visualizer::Mode mode> void ArcDiagram::drawDiagrams()
           }
 
           glPushMatrix();
-          glTranslatef(xL, yL, 0.0);
-          glRotatef(aglDeg-90.0, 0.0, 0.0, 1.0);
+          glTranslatef(static_cast<GLfloat>(xL), static_cast<GLfloat>(yL), 0.0f);
+          glRotatef(static_cast<GLfloat>(aglDeg-90.0), 0.0, 0.0, 1.0);
           VisUtils::enableLineAntiAlias();
           VisUtils::fillTriangle(0.0, 0.0, -pix, dist, pix, dist);
           VisUtils::drawTriangle(0.0, 0.0, -pix, dist, pix, dist);
@@ -606,7 +599,7 @@ template <Visualizer::Mode mode> void ArcDiagram::drawDiagrams()
           VisUtils::drawLine(xL, xD, yL, yD);
         }
 
-        glTranslatef(xD, yD, 0.0);
+        glTranslatef(static_cast<GLfloat>(xD), static_cast<GLfloat>(yD), 0.0f);
         if (m_mouseDrag)
         {
           if (i == currIdxDgrm)
@@ -623,13 +616,6 @@ template <Visualizer::Mode mode> void ArcDiagram::drawDiagrams()
         if (i == animIdxDgrm)
         {
           std::vector< double > vals;
-          /*
-          for ( int j = 0; j < attrsDgrm[i].size(); ++j )
-              vals.push_back(
-                  attrsDgrm[i][j]->mapToValue(
-                      framesDgrm[i][frameIdxDgrm[i]]->getNode(0)->getTupleVal(
-                          attrsDgrm[i][j]->getIndex() ) )->getIndex() );
-          */
           Attribute* attr;
           Node* node;
           for (std::size_t j = 0; j < attrsDgrm[i].size(); ++j)
@@ -638,7 +624,7 @@ template <Visualizer::Mode mode> void ArcDiagram::drawDiagrams()
             node = framesDgrm[i][frameIdxDgrm[i]]->getNode(0);
             if (attr->getSizeCurValues() > 0)
             {
-              vals.push_back(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex());
+              vals.push_back(static_cast<double>(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex()));
             }
             else
             {
@@ -646,8 +632,8 @@ template <Visualizer::Mode mode> void ArcDiagram::drawDiagrams()
               vals.push_back(val);
             }
           }
-          attr = 0;
-          node = 0;
+          attr = nullptr;
+          node = nullptr;
 
           diagram->draw<mode>(pixelSize(), attrsDgrm[i], vals);
           vals.clear();
@@ -655,13 +641,6 @@ template <Visualizer::Mode mode> void ArcDiagram::drawDiagrams()
         else
         {
           std::vector< double > vals;
-          /*
-          for ( int j = 0; j < attrsDgrm[i].size(); ++j )
-              vals.push_back(
-                  attrsDgrm[i][j]->mapToValue(
-                      framesDgrm[i][frameIdxDgrm[i]]->getNode(0)->getTupleVal(
-                          attrsDgrm[i][j]->getIndex() ) )->getIndex() );
-          */
           Attribute* attr;
           Node* node;
           for (std::size_t j = 0; j < attrsDgrm[i].size(); ++j)
@@ -670,7 +649,7 @@ template <Visualizer::Mode mode> void ArcDiagram::drawDiagrams()
             node = framesDgrm[i][frameIdxDgrm[i]]->getNode(0);
             if (attr->getSizeCurValues() > 0)
             {
-              vals.push_back(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex());
+              vals.push_back(static_cast<double>(attr->mapToValue(node->getTupleVal(attr->getIndex()))->getIndex()));
             }
             else
             {
@@ -678,8 +657,8 @@ template <Visualizer::Mode mode> void ArcDiagram::drawDiagrams()
               vals.push_back(val);
             }
           }
-          attr = 0;
-          node = 0;
+          attr = nullptr;
+          node = nullptr;
 
           diagram->draw<mode>(pixelSize(), attrsDgrm[i], vals);
           vals.clear();
@@ -688,7 +667,7 @@ template <Visualizer::Mode mode> void ArcDiagram::drawDiagrams()
         QString msg = QString("%1/%2").arg(int(frameIdxDgrm[i]+1)).arg(int(framesDgrm[i].size()));
 
         VisUtils::setColor(settings->textColor.value());
-        VisUtils::drawLabelRight(texCharId, -0.76, -0.89, 5*settings->textSize.value()*pix/CHARHEIGHT, msg.toStdString());
+        VisUtils::drawLabelRight(&texCharId[0], -0.76, -0.89, 5*settings->textSize.value()*pix/CHARHEIGHT, msg.toStdString());
 
         VisUtils::enableLineAntiAlias();
 
@@ -816,8 +795,8 @@ template <Visualizer::Mode mode> void ArcDiagram::drawMarkedLeaves()
 
           for (std::size_t j = 0; j < it->second.size(); ++j)
           {
-            double aglBeg = j*frac*360.0;
-            double aglEnd = (j+1)*frac*360.0;
+            double aglBeg = static_cast<double>(j)*frac*360.0;
+            double aglEnd = static_cast<double>(j+1)*frac*360.0;
 
             QColor colIn = it->second[j];
             QColor colOut = alpha(colIn, 0.0);
@@ -979,21 +958,21 @@ QColor ArcDiagram::calcColor(std::size_t iter, std::size_t numr)
 {
   int colorMap = settings->clusterTreeColorMap.value();
   if (colorMap == VisUtils::COL_MAP_QUAL_PAST_1)
-    return VisUtils::qualPast1(iter, numr);
+    return VisUtils::qualPast1(static_cast<int>(iter), static_cast<int>(numr));
   else if (colorMap == VisUtils::COL_MAP_QUAL_PAST_2)
-    return VisUtils::qualPast2(iter, numr);
+    return VisUtils::qualPast2(static_cast<int>(iter), static_cast<int>(numr));
   else if (colorMap == VisUtils::COL_MAP_QUAL_SET_1)
-    return VisUtils::qualSet1(iter, numr);
+    return VisUtils::qualSet1(static_cast<int>(iter), static_cast<int>(numr));
   else if (colorMap == VisUtils::COL_MAP_QUAL_SET_2)
-    return VisUtils::qualSet2(iter, numr);
+    return VisUtils::qualSet2(static_cast<int>(iter), static_cast<int>(numr));
   else if (colorMap == VisUtils::COL_MAP_QUAL_SET_3)
-    return VisUtils::qualSet3(iter, numr);
+    return VisUtils::qualSet3(static_cast<int>(iter), static_cast<int>(numr));
   else if (colorMap == VisUtils::COL_MAP_QUAL_PAIR)
-    return VisUtils::qualPair(iter, numr);
+    return VisUtils::qualPair(static_cast<int>(iter), static_cast<int>(numr));
   else if (colorMap == VisUtils::COL_MAP_QUAL_DARK)
-    return VisUtils::qualDark(iter, numr);
+    return VisUtils::qualDark(static_cast<int>(iter), static_cast<int>(numr));
   else if (colorMap == VisUtils::COL_MAP_QUAL_ACCENT)
-    return VisUtils::qualAccent(iter, numr);
+    return VisUtils::qualAccent(static_cast<int>(iter), static_cast<int>(numr));
   else
     return QColor();
 }
@@ -1032,7 +1011,7 @@ void ArcDiagram::calcSettingsLeaves()
     double xRgt =  0.5*Utils::minn(size.width(), size.height())-20*pix;
 
     // get number of values on x-axis
-    double numX = m_graph->getSizeLeaves();
+    double numX = static_cast<double>(m_graph->getSizeLeaves());
 
     // calc intervals per axis
     double fracX;
@@ -1096,9 +1075,9 @@ void ArcDiagram::calcSettingsBundles()
     double maxSize = 0;
     {
       for (std::size_t i = 0; i < m_graph->getSizeBundles(); ++i)
-        if (m_graph->getBundle(i)->getSizeEdges() > maxSize)
+        if (static_cast<double>(m_graph->getBundle(i)->getSizeEdges()) > maxSize)
         {
-          maxSize = m_graph->getBundle(i)->getSizeEdges();
+          maxSize = static_cast<double>(m_graph->getBundle(i)->getSizeEdges());
         }
     }
 
@@ -1160,7 +1139,6 @@ void ArcDiagram::calcSettingsBundles()
         }
 
         markBundles.push_back(false);
-        //updateMarkBundles();
       }
     }
   }
@@ -1169,7 +1147,7 @@ void ArcDiagram::calcSettingsBundles()
 
 void ArcDiagram::calcSettingsTree()
 {
-  if (m_graph->getRoot() != 0)
+  if (m_graph->getRoot() != nullptr)
   {
     QSizeF size = worldSize();
     double yTop = 0.5*Utils::minn(size.width(), size.height())-2.0*radLeaves;
@@ -1179,15 +1157,6 @@ void ArcDiagram::calcSettingsTree()
 
     // calc max depth of clustering tree
     std::size_t maxLvl = 0;
-    /*
-    {
-    for ( int i = 0; i < graph->getSizeLeaves(); ++i )
-    {
-        if ( graph->getLeaf(i)->getSizeCoord() > maxLvl )
-            maxLvl = graph->getLeaf(i)->getSizeCoord();
-    }
-    }
-    */
     maxLvl = attrsTree.size() + 1;
 
     // init positions
@@ -1221,7 +1190,7 @@ void ArcDiagram::calcPositionsTree(
 
   Position2D topLft;
   Position2D botRgt;
-  int        lvl = c->getSizeCoord()-1;
+  int        lvl = static_cast<int>(c->getSizeCoord()-1);
 
   std::vector< std::size_t > v;
   c->getCoord(v);
@@ -1236,14 +1205,14 @@ void ArcDiagram::calcPositionsTree(
                     +  posTreeBotRgt[lvl+1][posTreeBotRgt[lvl+1].size()-1].x);
 
 
-    topLft.y = (((maxLvl-1)-  lvl)*itvHgt);
-    botRgt.y = (((maxLvl-1)-(lvl+1))*itvHgt);
+    topLft.y = (static_cast<double>((maxLvl-1)-  lvl)*itvHgt);
+    botRgt.y = (static_cast<double>((maxLvl-1)-(lvl+1))*itvHgt);
   }
   else
   {
     topLft.x = posLeaves[c->getIndex()].x;
     botRgt.x = posLeaves[c->getIndex()].x;
-    topLft.y = (((maxLvl-1)-  lvl)*itvHgt);
+    topLft.y = (static_cast<double>((maxLvl-1)-  lvl)*itvHgt);
     botRgt.y = posLeaves[c->getIndex()].y;
   }
 
@@ -1255,7 +1224,7 @@ void ArcDiagram::calcPositionsTree(
 
 void ArcDiagram::calcSettingsBarTree()
 {
-  if (m_graph->getRoot() != 0)
+  if (m_graph->getRoot() != nullptr)
   {
     QSizeF size = worldSize();
     double yBot = -0.5*Utils::minn(size.width(), size.height());
@@ -1305,7 +1274,7 @@ void ArcDiagram::calcPositionsBarTree(
 
   Position2D topLft;
   Position2D botRgt;
-  int        lvl = c->getSizeCoord()-1;
+  int        lvl = static_cast<int>(c->getSizeCoord()-1);
 
   if (c->getSizeChildren() != 0)
   {
@@ -1364,9 +1333,9 @@ void ArcDiagram::calcSettingsDiagram()
 
 void ArcDiagram::updateMarkBundles()
 {
-  for (std::size_t i = 0; i < markBundles.size(); ++i)
+  for (auto && markBundle : markBundles)
   {
-    markBundles[i] = false;
+    markBundle = false;
   }
 
   if (currIdxDgrm != NON_EXISTING)
@@ -1461,21 +1430,21 @@ void ArcDiagram::clearSettingsDiagram()
   showDgrm.clear();
 
   {
-    for (std::size_t i = 0; i < attrsDgrm.size(); ++i)
+    for (auto & i : attrsDgrm)
     {
-      attrsDgrm[i].clear();
+      i.clear();
     }
   }
   attrsDgrm.clear();
 
   {
-    for (std::size_t i = 0; i < framesDgrm.size(); ++i)
+    for (auto& i: framesDgrm)
     {
-      for (std::size_t j = 0; j < framesDgrm[i].size(); ++j)
+      for (auto& j: i)
       {
-        delete framesDgrm[i][j];
+        delete j;
       }
-      framesDgrm[i].clear();
+      i.clear();
     }
   }
   framesDgrm.clear();
@@ -1542,7 +1511,7 @@ void ArcDiagram::handleHits(const std::vector< int >& ids)
         {
           currIdxDgrm = NON_EXISTING;
           updateMarkBundles();
-          emit hoverCluster(0);
+          emit hoverCluster(nullptr);
 
           handleHoverCluster(mapPosToClust.size()-1, ids[2]);
         }
@@ -1551,7 +1520,7 @@ void ArcDiagram::handleHits(const std::vector< int >& ids)
       case ID_TREE_NODE:
         currIdxDgrm = NON_EXISTING;
         updateMarkBundles();
-        emit hoverCluster(0);
+        emit hoverCluster(nullptr);
 
         handleHoverCluster(ids[2], ids[3]);
         break;
@@ -1559,7 +1528,7 @@ void ArcDiagram::handleHits(const std::vector< int >& ids)
       case ID_BAR_TREE:
         currIdxDgrm = NON_EXISTING;
         updateMarkBundles();
-        emit hoverCluster(0);
+        emit hoverCluster(nullptr);
 
         handleHoverBarTree(ids[2], ids[3]);
         break;
@@ -1629,7 +1598,7 @@ void ArcDiagram::handleHits(const std::vector< int >& ids)
     {
       currIdxDgrm = NON_EXISTING;
       updateMarkBundles();
-      emit hoverCluster(0);
+      emit hoverCluster(nullptr);
     }
     QToolTip::hideText(); 
   }
@@ -1659,15 +1628,6 @@ void ArcDiagram::handleHoverCluster(
         msg = value->getValue();
       }
 
-      /* -*-
-      Value* val;
-      val = clust->getAttribute()->mapToValue( clust->getAttrValIdx() );
-      if ( val != 0 )
-          msg = val->getValue();
-      else
-          msg = "";
-      val = 0;
-      */
     }
     QToolTip::showText(QCursor::pos(),QString::fromStdString(msg));
   }
@@ -1718,7 +1678,7 @@ void ArcDiagram::handleShowDiagram(const std::size_t& dgrmIdx)
     hideDiagram(dgrmIdx);
     currIdxDgrm = NON_EXISTING;
     updateMarkBundles();
-    emit hoverCluster(0);
+    emit hoverCluster(nullptr);
   }
 }
 
@@ -1727,7 +1687,7 @@ void ArcDiagram::handleDragDiagram()
 {
   if (dragIdxDgrm != NON_EXISTING && static_cast<std::size_t>(dragIdxDgrm) < posDgrm.size())
   {
-    handleDragDiagram(dragIdxDgrm);
+    handleDragDiagram(static_cast<int>(dragIdxDgrm));
   }
 }
 
@@ -1837,7 +1797,7 @@ void ArcDiagram::showDiagram(const std::size_t& dgrmIdx)
 {
   Cluster* clust = m_graph->getLeaf(dgrmIdx);
 
-  if (clust != 0)
+  if (clust != nullptr)
   {
     Attribute*        attr;
     std::set< Attribute* > attrs;
@@ -1850,49 +1810,49 @@ void ArcDiagram::showDiagram(const std::size_t& dgrmIdx)
     {
       // get result
       attr   = diagram->shape(i)->xCenterDOF()->attribute();
-      if (attr != 0)
+      if (attr != nullptr)
       {
         attrs.insert(attr);
       }
 
       attr = diagram->shape(i)->yCenterDOF()->attribute();
-      if (attr != 0)
+      if (attr != nullptr)
       {
         attrs.insert(attr);
       }
 
       attr = diagram->shape(i)->widthDOF()->attribute();
-      if (attr != 0)
+      if (attr != nullptr)
       {
         attrs.insert(attr);
       }
 
       attr = diagram->shape(i)->heightDOF()->attribute();
-      if (attr != 0)
+      if (attr != nullptr)
       {
         attrs.insert(attr);
       }
 
       attr = diagram->shape(i)->angleDOF()->attribute();
-      if (attr != 0)
+      if (attr != nullptr)
       {
         attrs.insert(attr);
       }
 
       attr = diagram->shape(i)->colorDOF()->attribute();
-      if (attr != 0)
+      if (attr != nullptr)
       {
         attrs.insert(attr);
       }
 
       attr = diagram->shape(i)->opacityDOF()->attribute();
-      if (attr != 0)
+      if (attr != nullptr)
       {
         attrs.insert(attr);
       }
 
       attr = diagram->shape(i)->textDOF()->attribute();
-      if (attr != 0)
+      if (attr != nullptr)
       {
         attrs.insert(attr);
       }
@@ -1916,9 +1876,9 @@ void ArcDiagram::showDiagram(const std::size_t& dgrmIdx)
 
     // clear framesDgrm
     {
-      for (std::size_t i = 0; i < framesDgrm[dgrmIdx].size(); ++i)
+      for (auto & i : framesDgrm[dgrmIdx])
       {
-        delete framesDgrm[dgrmIdx][i];
+        delete i;
       }
     }
     framesDgrm[dgrmIdx].clear();
@@ -1939,10 +1899,10 @@ void ArcDiagram::showDiagram(const std::size_t& dgrmIdx)
 
     // clear memory
     attrs.clear();
-    attr = 0;
+    attr = nullptr;
   }
 
-  clust = 0;
+  clust = nullptr;
 }
 
 
@@ -1950,7 +1910,7 @@ void ArcDiagram::hideDiagram(const std::size_t& dgrmIdx)
 {
   Cluster* clust = m_graph->getLeaf(dgrmIdx);
 
-  if (clust != 0)
+  if (clust != nullptr)
   {
     // hide diagram
     showDgrm[dgrmIdx] = false;
@@ -1973,7 +1933,7 @@ void ArcDiagram::hideDiagram(const std::size_t& dgrmIdx)
     posDgrm[dgrmIdx].y = 0;
   }
 
-  clust = 0;
+  clust = nullptr;
 }
 
 

@@ -10,6 +10,8 @@
 #ifndef MCRL2_PBES_CONSTELM_H
 #define MCRL2_PBES_CONSTELM_H
 
+#include <ranges>
+
 #include "mcrl2/pbes/algorithms.h"
 #include "mcrl2/pbes/pbes_rewriter_type.h"
 #include "mcrl2/pbes/print.h"
@@ -121,10 +123,8 @@ struct edge_traverser_stack_elem
   edge_map edges;
 
   edge_traverser_stack_elem(const data::data_expression& cond_pos, const data::data_expression& cond_neg, std::set<data::variable>&& free_vars)
-    : Cpos(cond_pos), Cneg(cond_neg)
-  {
-    std::swap(FV, free_vars);
-  }
+    : Cpos(cond_pos), Cneg(cond_neg), FV(std::move(free_vars))
+  {}
 };
 
 struct edge_condition_traverser: public pbes_expression_traverser<edge_condition_traverser>
@@ -178,10 +178,12 @@ struct edge_condition_traverser: public pbes_expression_traverser<edge_condition
   // is expensive (observed by Jeroen Keiren, 27/6/2025), and ec1 and ec2 are
   // not used in the calling context, we here explicitly accept them as
   // rvalue reference; this allows us to move the edges out of ec1 and ec2.
+  // NOLINTBEGIN(cppcoreguidelines-rvalue-reference-param-not-moved) ec1 and ec2 are consumed: their edges are moved into ec below.
   void merge_conditions(stack_elem&& ec1, bool negate1,
                         stack_elem&& ec2, bool negate2,
                         stack_elem& ec, bool is_conjunctive
                        )
+  // NOLINTEND(cppcoreguidelines-rvalue-reference-param-not-moved)
   {
     for (auto& i: ec1.edges)
     {
@@ -525,10 +527,10 @@ class pbes_constelm_algorithm
           detail::make_constelm_substitution(constraints, sigma);
 
           qvar_list result;
-          for (auto it = Q.crbegin(); it != Q.crend(); ++it)
+          for (const auto& it: std::ranges::reverse_view(Q))
           {
-            bool is_forall = it->is_forall();
-            const data::variable& var = it->variable();
+            bool is_forall = it.is_forall();
+            const data::variable& var = it.variable();
             // Variable of a universal quantifier cannot occur in the disjunctive context
             // Variable of an existential quantifier cannot occur in the conjunctive context
             const std::set<data::variable>& context = is_forall ? m_disj_context : m_conj_context;
@@ -547,7 +549,7 @@ class pbes_constelm_algorithm
 
             if (none_occurs_in_context)
             {
-              result.push_front(*it);
+              result.push_front(it);
             }
             else
             {
@@ -1072,8 +1074,10 @@ void constelm(pbes& p,
     case pbes_rewriter_type::quantifier_all:
     case pbes_rewriter_type::quantifier_finite:
     {
-      bool enumerate_infinite_sorts = (rewriter_type == pbes_rewriter_type::quantifier_all);
-      enumerate_quantifiers_rewriter pbesr(datar, p.data(), enumerate_infinite_sorts);
+      const enumerate_quantifiers_mode enum_mode = (rewriter_type == pbes_rewriter_type::quantifier_all?
+                                                         expand_infinite_sorts_and_use_data_rewriter:
+                                                         expand_finite_sorts);
+      enumerate_quantifiers_rewriter pbesr(datar, p.data(), enum_mode);
       pbes_constelm_algorithm<data::rewriter, enumerate_quantifiers_rewriter> algorithm(datar, pbesr);
       algorithm.run(p, compute_conditions, check_quantifiers);
       if (remove_redundant_equations)

@@ -16,9 +16,8 @@
 #include "mcrl2/modal_formula/add_binding.h"
 #include "mcrl2/modal_formula/builder.h"
 
-namespace mcrl2 {
-
-namespace action_formulas {
+namespace mcrl2::action_formulas
+{
 
 namespace detail {
 
@@ -26,7 +25,8 @@ namespace detail {
 template <template <class> class Builder, class Derived, class Substitution, class IdentifierGenerator>
 struct add_capture_avoiding_replacement_with_an_identifier_generator: public lps::detail::add_capture_avoiding_replacement_with_an_identifier_generator<Builder, Derived, Substitution, IdentifierGenerator>
 {
-  typedef lps::detail::add_capture_avoiding_replacement_with_an_identifier_generator<Builder, Derived, Substitution, IdentifierGenerator> super;
+  using super = lps::detail::
+    add_capture_avoiding_replacement_with_an_identifier_generator<Builder, Derived, Substitution, IdentifierGenerator>;
   using super::enter;
   using super::leave;
   using super::update;
@@ -70,7 +70,7 @@ struct add_capture_avoiding_replacement_with_an_identifier_generator: public lps
 ///              right hand side. The class maintain_variables_in_rhs is useful for this purpose.
 /// \\param id_generator A generator that generates unique strings, not yet used as variable names.
 
-template <typename T, typename Substitution, typename IdentifierGenerator>
+template <typename T, data::IsSubstitution Substitution, typename IdentifierGenerator>
 void replace_variables_capture_avoiding_with_an_identifier_generator(T& x,
                        Substitution& sigma,
                        IdentifierGenerator& id_generator
@@ -89,7 +89,7 @@ void replace_variables_capture_avoiding_with_an_identifier_generator(T& x,
 ///              right hand side. The class maintain_variables_in_rhs is useful for this purpose.
 /// \\param id_generator A generator that generates unique strings, not yet used as variable names.
 /// \\return The result is the term x to which sigma has been applied.
-template <typename T, typename Substitution, typename IdentifierGenerator>
+template <typename T, data::IsSubstitution Substitution, typename IdentifierGenerator>
 T replace_variables_capture_avoiding_with_an_identifier_generator(const T& x,
                     Substitution& sigma,
                     IdentifierGenerator& id_generator
@@ -102,13 +102,10 @@ T replace_variables_capture_avoiding_with_an_identifier_generator(const T& x,
 }
 //--- end generated action_formulas replace_capture_avoiding_with_identifier_generator code ---//
 
-} // namespace action_formulas
+} // namespace mcrl2::action_formulas
 
-} // namespace mcrl2
-
-namespace mcrl2 {
-
-namespace regular_formulas {
+namespace mcrl2::regular_formulas
+{
 
 namespace detail {
 
@@ -116,7 +113,8 @@ namespace detail {
 template <template <class> class Builder, class Derived, class Substitution, class IdentifierGenerator>
 struct add_capture_avoiding_replacement_with_an_identifier_generator: public action_formulas::detail::add_capture_avoiding_replacement_with_an_identifier_generator<Builder, Derived, Substitution, IdentifierGenerator>
 {
-  typedef action_formulas::detail::add_capture_avoiding_replacement_with_an_identifier_generator<Builder, Derived, Substitution, IdentifierGenerator> super;
+  using super = action_formulas::detail::
+    add_capture_avoiding_replacement_with_an_identifier_generator<Builder, Derived, Substitution, IdentifierGenerator>;
   using super::enter;
   using super::leave;
   using super::update;
@@ -147,7 +145,7 @@ make_add_capture_avoiding_replacement_with_an_identifier_generator(Substitution&
 ///              right hand side. The class maintain_variables_in_rhs is useful for this purpose.
 /// \\param id_generator A generator that generates unique strings, not yet used as variable names.
 
-template <typename T, typename Substitution, typename IdentifierGenerator>
+template <typename T, data::IsSubstitution Substitution, typename IdentifierGenerator>
 void replace_variables_capture_avoiding_with_an_identifier_generator(T& x,
                        Substitution& sigma,
                        IdentifierGenerator& id_generator
@@ -166,7 +164,7 @@ void replace_variables_capture_avoiding_with_an_identifier_generator(T& x,
 ///              right hand side. The class maintain_variables_in_rhs is useful for this purpose.
 /// \\param id_generator A generator that generates unique strings, not yet used as variable names.
 /// \\return The result is the term x to which sigma has been applied.
-template <typename T, typename Substitution, typename IdentifierGenerator>
+template <typename T, data::IsSubstitution Substitution, typename IdentifierGenerator>
 T replace_variables_capture_avoiding_with_an_identifier_generator(const T& x,
                     Substitution& sigma,
                     IdentifierGenerator& id_generator
@@ -179,13 +177,10 @@ T replace_variables_capture_avoiding_with_an_identifier_generator(const T& x,
 }
 //--- end generated regular_formulas replace_capture_avoiding_with_identifier_generator code ---//
 
-} // namespace regular_formulas
+} // namespace mcrl2::regular_formulas
 
-} // namespace mcrl2
-
-namespace mcrl2 {
-
-namespace state_formulas {
+namespace mcrl2::state_formulas
+{
 
 namespace detail {
 
@@ -194,7 +189,8 @@ namespace detail {
 template <template <class> class Builder, class Derived, class Substitution, class IdentifierGenerator>
 struct add_capture_avoiding_replacement_with_an_identifier_generator: public data::detail::add_capture_avoiding_replacement_with_an_identifier_generator<Builder, Derived, Substitution, IdentifierGenerator>
 {
-  typedef data::detail::add_capture_avoiding_replacement_with_an_identifier_generator<Builder, Derived, Substitution, IdentifierGenerator> super;
+  using super = data::detail::
+    add_capture_avoiding_replacement_with_an_identifier_generator<Builder, Derived, Substitution, IdentifierGenerator>;
   using super::enter;
   using super::leave;
   using super::update;
@@ -242,7 +238,7 @@ make_add_capture_avoiding_replacement_with_an_identifier_generator(Substitution&
 ///              right hand side. The class maintain_variables_in_rhs is useful for this purpose.
 /// \\param id_generator A generator that generates unique strings, not yet used as variable names.
 
-template <typename T, typename Substitution, typename IdentifierGenerator>
+template <typename T, data::IsSubstitution Substitution, typename IdentifierGenerator>
 void replace_variables_capture_avoiding_with_an_identifier_generator(T& x,
                        Substitution& sigma,
                        IdentifierGenerator& id_generator
@@ -261,7 +257,7 @@ void replace_variables_capture_avoiding_with_an_identifier_generator(T& x,
 ///              right hand side. The class maintain_variables_in_rhs is useful for this purpose.
 /// \\param id_generator A generator that generates unique strings, not yet used as variable names.
 /// \\return The result is the term x to which sigma has been applied.
-template <typename T, typename Substitution, typename IdentifierGenerator>
+template <typename T, data::IsSubstitution Substitution, typename IdentifierGenerator>
 T replace_variables_capture_avoiding_with_an_identifier_generator(const T& x,
                     Substitution& sigma,
                     IdentifierGenerator& id_generator
@@ -274,8 +270,6 @@ T replace_variables_capture_avoiding_with_an_identifier_generator(const T& x,
 }
 //--- end generated state_formulas replace_capture_avoiding_with_identifier_generator code ---//
 
-} // namespace state_formulas
-
-} // namespace mcrl2
+} // namespace mcrl2::state_formulas
 
 #endif // MCRL2_MODAL_FORMULA_REPLACE_CAPTURE_AVOIDING_WITH_AN_IDENTIFIER_GENERATOR_H

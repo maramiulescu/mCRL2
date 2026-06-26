@@ -16,7 +16,6 @@
 
 #include "mcrl2/lps/specification.h"
 #include "mcrl2/lps/detail/instantiate_global_variables.h"
-#include "mcrl2/lps/io.h"
 #include "mcrl2/lps/one_point_rule_rewrite.h"
 #include "mcrl2/lps/order_summand_variables.h"
 #include "mcrl2/lps/replace_constants_by_variables.h"
@@ -26,8 +25,6 @@
 #include "mcrl2/symbolic/ordering.h"
 #include "mcrl2/symbolic/print.h"
 #include "mcrl2/symbolic/symbolic_reachability.h"
-#include "mcrl2/utilities/parse_numbers.h"
-#include "mcrl2/utilities/stack_array.h"
 #include "mcrl2/utilities/stopwatch.h"
 
 #include <sylvan_ldd.hpp>
@@ -58,7 +55,7 @@ class lpsreach_algorithm
     symbolic_lts m_lts;
     
     /// \brief Rewrites all arguments of the given action.
-    template<typename Rewriter, typename Substitution>
+    template<typename Rewriter, data::IsSubstitution Substitution>
     lps::multi_action rewrite_action(const lps::multi_action& a, const Rewriter& rewr, const Substitution& sigma)
     {
       const process::action_list& actions = a.actions();

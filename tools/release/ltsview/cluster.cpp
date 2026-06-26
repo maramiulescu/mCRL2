@@ -35,7 +35,7 @@ bool Comp_BCVolume::operator()(const Cluster* c1,const Cluster* c2) const
 
 Cluster::Cluster(int r)
 {
-  ancestor = NULL;
+  ancestor = nullptr;
   position = 0.0f;
   baseRadius = 0.0f;
   topRadius = 0.0f;
@@ -123,7 +123,7 @@ Cluster* Cluster::getDescendant(int i) const
 {
   if (severedDescendants[i].size() > 0)
   {
-    return NULL;
+    return nullptr;
   }
   else
   {
@@ -230,9 +230,9 @@ void Cluster::computeSizeAndPositions_FSM()
 {
   // This process is described in Frank van Ham's Master's thesis, p. 24
   // Recurse into the tree (depth first)
-  for (unsigned int i = 0; i < descendants.size(); ++i)
+  for (auto & descendant : descendants)
   {
-    descendants[i]->computeSizeAndPositions_FSM();
+    descendant->computeSizeAndPositions_FSM();
   }
 
   /* Compute the cluster radius r such that all states fit nicely into the
@@ -244,7 +244,7 @@ void Cluster::computeSizeAndPositions_FSM()
    * So: N * pi * 0.1^2 = 0.25 * pi * r^2
    * Hence: r = sqrt( N * 0.04 )
    */
-  topRadius = states.size()/(2*static_cast<float>(PI));
+  topRadius = static_cast<float>(states.size())/(2*static_cast<float>(PI));
 
   if (descendants.size() == 0)
   {
@@ -330,21 +330,21 @@ void Cluster::computeSizeAndPositions_FSM()
     bc_radius = std::max(min_radius1 + bcr_rim,min_radius2);
     bc_radius = std::max(topRadius,bc_radius);
     bc_height = 0.0f;
-    for (unsigned int i = 0; i < descendants.size(); ++i)
+    for (auto & descendant : descendants)
     {
-      if (descendants[i]->getBCHeight() > bc_height)
+      if (descendant->getBCHeight() > bc_height)
       {
-        bc_height = descendants[i]->getBCHeight();
+        bc_height = descendant->getBCHeight();
       }
     }
     bc_height += 1.0f;
 
     // Divide the remaining descendants over the rim of the circle.
-    float angle = 360.0f / (y-x);
+    float angle = 360.0f / static_cast<float>(y-x);
     int i = 0;
     while (x+i != y)
     {
-      descendants[x+i]->setPosition(i*angle);
+      descendants[x+i]->setPosition(static_cast<float>(i)*angle);
       ++i;
     }
   }
@@ -354,9 +354,9 @@ void Cluster::computeSizeAndPositions()
 {
   // This process is described in Frank van Ham's Master's thesis, p. 24
   // Recurse into the tree (depth first)
-  for (unsigned int i = 0; i < descendants.size(); ++i)
+  for (auto & descendant : descendants)
   {
-    descendants[i]->computeSizeAndPositions();
+    descendant->computeSizeAndPositions();
   }
 
   /* Compute the cluster radius r such that all states fit nicely into the
@@ -368,7 +368,7 @@ void Cluster::computeSizeAndPositions()
    * So: N * pi * 0.1^2 = 0.25 * pi * r^2
    * Hence: r = sqrt( N * 0.04 )
    */
-  topRadius = sqrt(states.size()*0.04f);
+  topRadius = static_cast<float>(sqrt(static_cast<float>(states.size())*0.04f));
 
   if (descendants.size() == 0)
   {
@@ -438,11 +438,11 @@ void Cluster::computeSizeAndPositions()
     bc_radius = std::max(bcr_center + bcr_rim + 0.01f,minRimRadius +bcr_rim);
     bc_radius = std::max(topRadius,bc_radius);
     bc_height = 0.0f;
-    for (unsigned int i = 0; i < descendants.size(); ++i)
+    for (auto & descendant : descendants)
     {
-      if (descendants[i]->getBCHeight() > bc_height)
+      if (descendant->getBCHeight() > bc_height)
       {
-        bc_height = descendants[i]->getBCHeight();
+        bc_height = descendant->getBCHeight();
       }
     }
     bc_height += 1.0f;
@@ -457,26 +457,26 @@ void Cluster::computeSizeAndPositions()
 
     int i = 0;
     int h = (y-x) / 2 + (y-x) % 2;
-    float angle = 360.0f / (y-x);
+    float angle = 360.0f / static_cast<float>(y-x);
     while (x != y)
     {
       if (i % 2 == 1)
       {
-        descendants[x]->setPosition(i*angle);
+        descendants[x]->setPosition(static_cast<float>(i)*angle);
         ++x;
         if (x != y)
         {
-          descendants[x]->setPosition((h+i)*angle);
+          descendants[x]->setPosition(static_cast<float>(h+i)*angle);
           ++x;
         }
       }
       else
       {
-        descendants[y-1]->setPosition(i*angle);
+        descendants[y-1]->setPosition(static_cast<float>(i)*angle);
         --y;
         if (x != y)
         {
-          descendants[y-1]->setPosition((h+i)*angle);
+          descendants[y-1]->setPosition(static_cast<float>(h+i)*angle);
           --y;
         }
       }

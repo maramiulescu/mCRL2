@@ -21,8 +21,8 @@
 // ======================================================================
 
 
-#define NAME "pbes2bes"
-#define AUTHOR "Jan Friso Groote"
+constexpr auto NAME = "pbes2bes";
+constexpr auto AUTHOR = "Jan Friso Groote";
 
 //Tool framework
 #include "mcrl2/utilities/input_output_tool.h"
@@ -93,8 +93,6 @@ class pbes2bes_tool: public rewriter_tool<pbes_input_tool<pbes_output_tool<input
     void parse_options(const command_line_parser& parser) override
     {
       super::parse_options(parser);
-
-      input_output_tool::parse_options(parser);
 
       m_erase_unused_bes_variables= parser.option_argument_as<remove_level>("erase");
       m_data_elm                  = parser.options.count("unused-data") == 0;

@@ -165,7 +165,10 @@ namespace detail
         args.push_back(rhs);
       }
 
-      return data::application(cache_elem.case_functions.at(rhss.front().sort()), args);
+      // Create the case function on demand:
+      // the output sort may not have been creation of case functions.
+      const data::function_symbol case_func = create_case_function(target.sort(), rhss.front().sort());
+      return data::application(case_func, args);
     }
 
     const data::function_symbol_vector& get_projection_funcs(const data::function_symbol& f)
@@ -351,7 +354,7 @@ namespace detail
     bool is_det_or_pi(const data::application& expr) const
     {
       using utilities::detail::contains;
-      
+
       const data::function_symbol f = data::detail::get_top_fs(expr);
       // If f is not unary, then it is certainly unequal to Det or pi
       if (f == data::function_symbol() || expr.size() != 1)
@@ -387,7 +390,7 @@ namespace detail
       }
       auto udm = m_datamgr.dataspec().mappings();
       const data::data_specification& dataspec = m_datamgr.dataspec();
-      if (std::find_if(udm.begin(), udm.end(), 
+      if (std::find_if(udm.begin(), udm.end(),
           [&](const auto& f2){ return f.name() == f2.name() && dataspec.equal_sorts(f.sort(), f2.sort()); }) == udm.end())
       {
         // f is not a mapping, but likely a constructor
@@ -470,6 +473,10 @@ namespace detail
     bool m_currently_recursing = false;
     std::size_t m_current_depth = 0;
 
+    /// \brief Maximum number of times an expression is unfolded before recursion
+    ///        stops; unfolding this often is enough to rewrite Det() and pi().
+    static constexpr std::size_t max_unfold_depth = 3;
+
     replace_pattern_match_builder(pattern_match_unfolder& unfolder)
       : m_unfolder(unfolder)
     {}
@@ -493,7 +500,7 @@ namespace detail
     {
       if (m_currently_recursing)
       {
-        if (m_current_depth >= 3 || m_unfolder.is_constructor(data::detail::get_top_fs(x)))
+        if (m_current_depth >= max_unfold_depth || m_unfolder.is_constructor(data::detail::get_top_fs(x)))
         {
           // Stop recursing after unfolding three times or when meeting a constructor
           // In the latter case, we have done enough to rewrite Det() and pi()
@@ -507,7 +514,7 @@ namespace detail
           super::apply(branch1, x[1]);
           data::data_expression branch2;
           super::apply(branch2, x[2]);
-          
+
           data::make_application(result,
             data::if_(x.sort()),
             x[0],
@@ -757,18 +764,19 @@ apply_parunfold_replacement_builder(const lpsparunfold::case_func_replacement& c
 }
 
 template <typename T>
+  requires(!std::is_base_of_v<atermpp::aterm, T>)
 void insert_case_functions(T& x,
     const lpsparunfold::case_func_replacement& cfv,
-    data::set_identifier_generator& id_generator,
-    std::enable_if_t<!std::is_base_of_v<atermpp::aterm, T>>* = nullptr)
+    data::set_identifier_generator& id_generator)
 {
   apply_parunfold_replacement_builder<lps::data_expression_builder, lps::detail::add_capture_avoiding_replacement>(cfv, id_generator).update(x);
 }
 
 template <typename T>
+  requires(!std::is_base_of_v<atermpp::aterm, T>)
 void insert_case_functions(T& x,
-    const lpsparunfold::case_func_replacement& cfv,
-    std::enable_if_t<!std::is_base_of_v<atermpp::aterm, T>>* = nullptr)
+    const lpsparunfold::case_func_replacement& cfv
+  )
 {
   data::set_identifier_generator id_generator;
   id_generator.add_identifiers(lps::find_identifiers(x));

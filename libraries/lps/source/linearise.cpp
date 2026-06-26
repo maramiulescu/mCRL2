@@ -45,9 +45,10 @@
 #include "mcrl2/lps/constelm.h"
 #include "mcrl2/lps/linearise.h"
 #include "mcrl2/lps/linearise_allow_block.h"
-#include "mcrl2/lps/linearise_utility.h"
-#include "mcrl2/lps/linearise_rename.h"
 #include "mcrl2/lps/linearise_communication.h"
+#include "mcrl2/lps/linearise_hide.h"
+#include "mcrl2/lps/linearise_rename.h"
+#include "mcrl2/lps/linearise_utility.h"
 #include "mcrl2/lps/replace_capture_avoiding_with_an_identifier_generator.h"
 #include "mcrl2/lps/sumelm.h"
 
@@ -116,7 +117,7 @@ class objectdatatype
     bool canterminate=false;
     bool containstime=false;
 
-    const std::set <variable> get_free_variables() const
+    std::set <variable> get_free_variables() const
     {
       return process::find_free_variables(processbody);
     }
@@ -268,7 +269,7 @@ class specification_basic_type
 
     /***************** temporary helper function to compare substitutions ******************/
 
-    template <class Expression, class Substitution>
+    template <class Expression, IsSubstitution Substitution>
     Expression replace_variables_capture_avoiding_alt(const Expression& e, Substitution& sigma)
     {
       return process::replace_variables_capture_avoiding_with_an_identifier_generator(e, sigma, fresh_identifier_generator);
@@ -281,7 +282,7 @@ class specification_basic_type
     {
       if (objectdata.count(o)==0)
       {
-        throw mcrl2::runtime_error("Fail to recognize " + process::pp(o) + 
+        throw mcrl2::runtime_error("Fail to recognize " + process::pp(o) +
                                    ". Most likely due to unguarded recursion in a process equation. ");
       }
     }
@@ -497,11 +498,11 @@ class specification_basic_type
       }
     }
 
-    template <class SUBSTITUTION>
-    std::set<data::variable> sigma_variables(const SUBSTITUTION& sigma)
+    template <data::IsSubstitution Substitution>
+    std::set<data::variable> sigma_variables(const Substitution& sigma)
     {
       std::set<data::variable> result;
-      for (typename SUBSTITUTION::const_iterator i = sigma.begin(); i != sigma.end(); ++i)
+      for (typename Substitution::const_iterator i = sigma.begin(); i != sigma.end(); ++i)
       {
         std::set<data::variable> V = data::find_free_variables(i->second);
         V.erase(i->first);
@@ -1226,13 +1227,11 @@ class specification_basic_type
 
       if (is_abstraction(t))
       {
-        // mCRL2log(mcrl2::log::warning) << "filtering of variables expression with binders" << std::endl;
         return;
       }
 
       if (is_where_clause(t))
       {
-        // mCRL2log(mcrl2::log::warning) << "filtering of variables expression with where clause" << std::endl;
         return;
       }
 
@@ -1407,7 +1406,7 @@ class specification_basic_type
       return false;
     }
 
-    template <class MutableSubstitution>
+    template <IsSubstitution MutableSubstitution>
     void alphaconvertprocess(
       variable_list& sumvars,
       MutableSubstitution& sigma,
@@ -1434,7 +1433,7 @@ class specification_basic_type
       sumvars=variable_list(newsumvars.begin(), newsumvars.end());
     }
 
-    template <class MutableSubstitution>
+    template <IsSubstitution MutableSubstitution>
     void alphaconvert(
       variable_list& sumvars,
       MutableSubstitution& sigma,
@@ -1467,8 +1466,8 @@ class specification_basic_type
     std::set< variable > find_free_variables_process(const process_expression& p)
     {
       std::set<variable> free_variables_in_p_new;
-      free_variables_in_p_new=process::find_free_variables(p); 
-      return free_variables_in_p_new; 
+      free_variables_in_p_new=process::find_free_variables(p);
+      return free_variables_in_p_new;
     }
 
     /* Remove assignments that do not appear in the parameter list. */
@@ -1506,7 +1505,7 @@ class specification_basic_type
     /******************* substitute *****************************************/
 
 
-    template <class Substitution>
+    template <IsSubstitution Substitution>
     assignment_list substitute_assignmentlist(
       const assignment_list& assignments,
       const variable_list& parameters,
@@ -1666,12 +1665,11 @@ class specification_basic_type
     /* The function below cannot be replace by replace_variables_capture_avoiding although
      * the interfaces are the same. As yet it is unclear why, but the difference shows itself
      * for instance when linearising lift3-final.mcrl2 and lift3_init.mcrl2 */
-    template <class Substitution>
+    template <IsSubstitution Substitution>
     process_expression substitute_pCRLproc(
       const process_expression& p,
       Substitution& sigma)
     {
-      // return process::replace_variables_capture_avoiding(p, sigma, fresh_identifier_generator);
       if (is_choice(p))
       {
         process_expression left=substitute_pCRLproc(choice(p).left(),sigma);
@@ -1806,7 +1804,7 @@ class specification_basic_type
       }
 
       throw mcrl2::runtime_error("Internal error: expect a pCRL process (2) " + process::pp(p));
-      return process_expression(); 
+      return process_expression();
     }
 
 
@@ -2470,7 +2468,6 @@ class specification_basic_type
 
       if (is_process_instance_assignment(body))
       {
-        // return transform_process_assignment_to_process(body);
         return body;
       }
 
@@ -2602,7 +2599,6 @@ class specification_basic_type
       if (is_tau(body1))
       {
         return seq(body1,body2);
-        // throw mcrl2::runtime_error("Expect only multiactions, not a tau.");
       }
 
       if (is_at(body1))
@@ -3749,7 +3745,6 @@ class specification_basic_type
 
       /* Take care that id1 is the last identifier or that id2 is arger than id1. This guarantees
          that there will be no loops in the mapping of identifiers. */
-      // make_substitution sigma(identifier_identifier_map);
       process_identifier id1= get_last(id1_,identifier_identifier_map);
       process_identifier id2= get_last(id2_,identifier_identifier_map);
       if (id1==initial_process)
@@ -3858,13 +3853,6 @@ class specification_basic_type
       }
 
       /* Store the pairs from process mapping into result */
-      /* std::map< process_identifier, process_expression > result;
-      for(const mapping_type_pair& p: process_mapping)
-      {
-        result[p.second]=p.first.second;
-      }
-      assert(result.count(initial_process)>0);
-      return result; */
       std::set< process_identifier > result;
       for(const mapping_type_pair& p: process_mapping)
       {
@@ -3989,7 +3977,7 @@ class specification_basic_type
     /**************** Collectparameterlist ******************************/
 
     bool alreadypresent(variable& var,
-                        const variable_list& vl, 
+                        const variable_list& vl,
                         mutable_indexed_substitution<>& parameter_renaming)
     {
       /* Note: variables can be different, although they have the
@@ -4004,9 +3992,9 @@ class specification_basic_type
         {
           if (v.sort()==var.sort())
           {
-            return true; // The variable is present. 
+            return true; // The variable is present.
           }
-          else 
+          else
           {
             if (parameter_renaming(v)==v)
             {
@@ -4017,14 +4005,14 @@ class specification_basic_type
             }
             else
             {
-              // The variable var is renamed, and the renaming was already present. 
-              var=atermpp::down_cast<variable>(parameter_renaming(v)); 
+              // The variable var is renamed, and the renaming was already present.
+              var=atermpp::down_cast<variable>(parameter_renaming(v));
               return true;
             }
           }
         }
       }
-      return false; // The variable var is not present. 
+      return false; // The variable var is not present.
     }
 
     variable_list joinparameters(const variable_list& par1,
@@ -4049,9 +4037,9 @@ class specification_basic_type
       return result;
     }
 
-    // While collecting the parameter list the process parameters that are part of the process identifiers may change. 
-    // This means the list pCRLprocs may change. 
-    variable_list collectparameterlist(std::set<process_identifier>& pCRLprocs) 
+    // While collecting the parameter list the process parameters that are part of the process identifiers may change.
+    // This means the list pCRLprocs may change.
+    variable_list collectparameterlist(std::set<process_identifier>& pCRLprocs)
                                        // mutable_indexed_substitution<>& parameter_renaming)
     {
       mutable_indexed_substitution<> parameter_renaming;  // Used to rename variables with the same name but different sorts.
@@ -4061,7 +4049,7 @@ class specification_basic_type
         const objectdatatype& object=objectIndex(p);
         parameters=joinparameters(parameters,object.parameters, parameter_renaming);
       }
-      // Apply the parameter renaming. 
+      // Apply the parameter renaming.
       std::set<process_identifier> new_pCRLprocs;
       for (const process_identifier& p: pCRLprocs)
       {
@@ -5078,7 +5066,7 @@ class specification_basic_type
       const bool regular,
       const bool singlestate,
       const variable_list& process_parameters)
-      
+
     {
       data_expression atTime;
       action_list multiAction;
@@ -5418,13 +5406,8 @@ class specification_basic_type
           functions=e.functions;
         }
 
-        void operator=(const enumeratedtype& e)
-        {
-          size=e.size;
-          sortId=e.sortId;
-          elementnames=e.elementnames;
-          functions=e.functions;
-        }
+        enumeratedtype& operator=(const enumeratedtype& e)
+        = default;
 
         ~enumeratedtype() = default;
     };
@@ -5741,7 +5724,7 @@ class specification_basic_type
           data_expression unique=representative_generator_internal(v.sort(),false);
           result=lazy::and_(result, equal_to(v,unique));
         }
-        catch (mcrl2::runtime_error&)
+        catch (mcrl2::runtime_error&) // NOLINT(bugprone-empty-catch)
         {
           // No representant for sort v.sort() could be found. No condition is added.
         }
@@ -5942,9 +5925,32 @@ class specification_basic_type
       return  var;
     }
 
+    // This function makes an assignment_list where the terms in resultnextstate are 
+    // assigned to the variables in the variable parameters, where no assignment is added
+    // if the righ and left hand side are identical, except when the parameter equals
+    // the expression in resultnextstate and this expression is a variable in sumvars 
+    // or stochvars. 
+    assignment_list make_optimised_assignment_list(const variable_list& parameters,
+                                                   const data_expression_list& resultnextstate,
+                                                   const variable_list& sum_vars, 
+                                                   const variable_list& stoch_vars)
+    {
+      assert(parameters.size()==resultnextstate.size());
+
+      data_expression_list::const_iterator i=resultnextstate.begin();
+      return assignment_list(parameters.begin(), 
+                             parameters.end(),
+                             [&i](const variable& p){ return assignment(p, *i++); },   // assignment to be inserted.
+                             [&sum_vars, &stoch_vars](const assignment& p)             // filter. If true, assignment is added.
+                                 { return p.lhs()!=p.rhs() || 
+                                          std::find(sum_vars.begin(),sum_vars.end(),p.rhs())!=sum_vars.end() ||
+                                          std::find(stoch_vars.begin(),stoch_vars.end(),p.rhs())!=stoch_vars.end(); });
+
+    }
+    
+
     stochastic_action_summand collect_sum_arg_arg_cond(
       const enumtype& e,
-      std::size_t n,
       const stochastic_action_summand_vector& action_summands,
       const variable_list& parameters)
     {
@@ -5955,6 +5961,7 @@ class specification_basic_type
          a variable of enumtype. In case binary is used,
          a sequence of variables are introduced of sort Bool */
 
+      std::size_t n=action_summands.size();
       variable_list resultsum;
       data_expression resultcondition;
       action_list resultmultiaction;
@@ -6100,10 +6107,8 @@ class specification_basic_type
       {
         data_expression_list resultf;
         // fcnt is the arity of the action with index multiactioncount-1;
-        // const action a= *(multiActionList[0].begin()+(multiactioncount-1));
         action_list::const_iterator a=multiActionList[0].begin();
         for (std::size_t i=1 ; i<multiactioncount ; ++i,++a) {}
-        // const action a= *((multiActionList[0]).begin()+(multiactioncount-1));
         std::size_t fcnt=(a->arguments()).size();
         data_expression f;
 
@@ -6556,7 +6561,7 @@ class specification_basic_type
       resultnextstate=reverse(resultnextstate);
       /* The list of arguments in nextstate are now in a sequential form, and
            must be transformed back to a list of assignments */
-      const assignment_list final_resultnextstate=make_assignment_list(parameters,resultnextstate);
+      const assignment_list final_resultnextstate=make_optimised_assignment_list(parameters,resultnextstate,resultsum,resulting_stochastic_variables);
       return stochastic_action_summand(
                             resultsum,
                             resultcondition,
@@ -6567,7 +6572,6 @@ class specification_basic_type
 
     deadlock_summand collect_sum_arg_arg_cond(
       const enumtype& e,
-      std::size_t n,
       const deadlock_summand_vector& deadlock_summands,
       const variable_list& parameters)
     {
@@ -6578,6 +6582,7 @@ class specification_basic_type
          a variable of enumtype. In case binary is used,
          a sequence of variables are introduced of sort Bool */
 
+      std::size_t n=deadlock_summands.size();
       variable_list resultsum;
       data_expression resultcondition;
       action_list resultmultiaction;
@@ -6875,11 +6880,10 @@ class specification_basic_type
 
               const enumtype enumeratedtype_(options.binary?2:n,actionsorts,get_sorts(pars),*this);
 
-              result.push_back(collect_sum_arg_arg_cond(enumeratedtype_,n,w1,pars));
+              result.push_back(collect_sum_arg_arg_cond(enumeratedtype_,w1,pars));
             }
             else
             {
-              // result=w1 + result;
               for(const stochastic_action_summand& summand: result)
               {
                 w1.push_back(summand);
@@ -6925,7 +6929,7 @@ class specification_basic_type
 
             const enumtype enumeratedtype_(options.binary?2:n,actionsorts,get_sorts(pars),*this);
 
-            result.push_back(collect_sum_arg_arg_cond(enumeratedtype_,n,w1,pars));
+            result.push_back(collect_sum_arg_arg_cond(enumeratedtype_,w1,pars));
           }
           else
           {
@@ -7045,69 +7049,6 @@ class specification_basic_type
     }
 
 
-    /**************** hiding *****************************************/
-
-#ifdef MCRL2_LOG_LPS_LINEARISE_STATISTICS
-    static
-    std::string log_hide_application(const lps_statistics_t& lps_statistics_before,
-                                     const lps_statistics_t& lps_statistics_after,
-                                     const std::size_t num_hidden_actions,
-                                     size_t indent = 0)
-    {
-      std::string indent_str(indent, ' ');
-      std::ostringstream os;
-
-      os << indent_str << "- operator: hide" << std::endl;
-
-      indent += 2;
-      indent_str = std::string(indent, ' ');
-      os << indent_str << "number of hidden actions: " << num_hidden_actions << std::endl
-         << indent_str << "before:" << std::endl << print(lps_statistics_before, indent+2)
-         << indent_str << "after:" << std::endl << print(lps_statistics_after, indent+2);
-
-      return os.str();
-    }
-#endif // MCRL2_LOG_LPS_LINEARISE_STATISTICS
-
-    static
-    action_list hide_(const identifier_string_list& hidelist, const action_list& multiaction)
-    {
-      action_list resultactionlist;
-
-      for (const action& a: multiaction)
-      {
-        if (std::find(hidelist.begin(),hidelist.end(),a.label().name())==hidelist.end())
-        {
-          resultactionlist.push_front(a);
-        }
-      }
-
-      /* reverse the actionlist to maintain the ordering */
-      resultactionlist = reverse(resultactionlist);
-      return resultactionlist;
-    }
-
-    static
-    void hidecomposition(const identifier_string_list& hidelist, stochastic_action_summand_vector& action_summands)
-    {
-#ifdef MCRL2_LOG_LPS_LINEARISE_STATISTICS
-      lps_statistics_t lps_statistics_before = get_statistics(action_summands);
-#endif
-      for (auto & action_summand : action_summands)
-      {
-        const action_list acts=hide_(hidelist,action_summand.multi_action().actions());
-        action_summand=stochastic_action_summand(action_summand.summation_variables(),
-                          action_summand.condition(),
-                          action_summand.has_time()?multi_action(acts,action_summand.multi_action().time()):multi_action(acts),
-                          action_summand.assignments(),
-                          action_summand.distribution());
-      }
-
-#ifdef MCRL2_LOG_LPS_LINEARISE_STATISTICS
-      lps_statistics_t lps_statistics_after = get_statistics(action_summands);
-      std::cout << log_hide_application(lps_statistics_before, lps_statistics_after, hidelist.size());
-#endif
-    }
 
     /**************** equalargs ****************************************/
 
@@ -7179,7 +7120,7 @@ class specification_basic_type
         variable var3=var2;
         for (std::size_t i=0 ; occursin(var3,pars1)||occursin(var3,pars2) ; ++i)
         {
-          var3=get_fresh_variable(var2.name(),var2.sort(),(unique?-1:i));
+          var3=get_fresh_variable(var2.name(),var2.sort(),(unique?-1:static_cast<int>(i)));
         }
         if (var3!=var2)
         {
@@ -7595,6 +7536,11 @@ class specification_basic_type
       const bool is_block,
       stochastic_action_summand_vector& action_summands)
     {
+      lps::detail::allow_list_cache allow_cache;
+      if(is_allow)
+      {
+        allow_cache = lps::detail::make_allow_list_cache(allowlist);
+      }
       for (const stochastic_action_summand& summand1: action_summands1)
       {
         variable_list sumvars=ultimate_delay_condition.variables();
@@ -7612,7 +7558,7 @@ class specification_basic_type
 
         if (multiaction1 != action_list({ terminationAction }))
         {
-          if (is_allow && !allow_(allowlist,multiaction1,terminationAction))
+          if (is_allow && !allow_(allow_cache,multiaction1,terminationAction))
           {
             continue;
           }
@@ -7801,6 +7747,12 @@ class specification_basic_type
           const bool is_block,
           stochastic_action_summand_vector& action_summands)
     {
+      lps::detail::allow_list_cache allow_cache;
+      if(is_allow)
+      {
+        allow_cache = lps::detail::make_allow_list_cache(allowlist);
+      }
+
       // First combine the action summands.
       for (const stochastic_action_summand& summand1: action_summands1)
       {
@@ -7832,7 +7784,7 @@ class specification_basic_type
               multiaction3=linMergeMultiActionList(multiaction1,multiaction2);
             }
 
-            if (is_allow && !allow_(allowlist,multiaction3,terminationAction))
+            if (is_allow && !allow_(allow_cache,multiaction3,terminationAction))
             {
               continue;
             }

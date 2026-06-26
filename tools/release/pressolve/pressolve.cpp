@@ -154,21 +154,17 @@ class pressolve_tool
     pres_system::pres presspec = pres_system::detail::load_pres(input_filename());
     enumerate_quantifiers_rewriter m_R(construct_rewriter(presspec), presspec.data());
  
-    // mCRL2log(log::debug) << "INPUT PRES\n" << presspec << "\n";
     data::mutable_map_substitution<> sigma;
     sigma = pres_system::detail::instantiate_global_variables(presspec);
     pres_system::detail::replace_global_variables(presspec, sigma);
 
     pres_system::normalize(presspec);
-    // mCRL2log(log::debug) << "RESULTING PRES\n" << presspec << "\n";
     
     mCRL2log(log::verbose) << "Generating RES..." << std::endl;
     timer().start("instantiation");
     pres2res_algorithm pres2res(options,presspec,m_R);
     pres resulting_res = pres2res.run();
     timer().finish("instantiation");
-
-    // mCRL2log(log::debug) << "RESULTING RES\n" << resulting_res << "\n";
 
     mCRL2log(log::verbose) << "Solving RES..." << std::endl;
     timer().start("solving");
@@ -183,13 +179,13 @@ class pressolve_tool
     { 
       ressolve_by_numerical_iteration solver(options, resulting_res);
       double result = solver.run();
-      std::cout << std::setprecision(options.precision) << result << std::endl;
+      std::cout << std::setprecision(static_cast<int>(options.precision)) << result << std::endl;
     }  
     else if (options.algorithm==numerical_directed)
     { 
       ressolve_by_numerical_iteration_directed solver(options, resulting_res);
       double result = solver.run();
-      std::cout << std::setprecision(options.precision) << result << std::endl;
+      std::cout << std::setprecision(static_cast<int>(options.precision)) << result << std::endl;
     }  
     timer().finish("solving");
     return true;

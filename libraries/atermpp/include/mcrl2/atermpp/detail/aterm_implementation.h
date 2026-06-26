@@ -7,9 +7,8 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#ifndef MCRL2_ATERMPP_ATERM_IMPLEMENTATION_H
-#define MCRL2_ATERMPP_ATERM_IMPLEMENTATION_H
-#pragma once
+#ifndef MCRL2_ATERMPP_DETAIL_ATERM_IMPLEMENTATION_H
+#define MCRL2_ATERMPP_DETAIL_ATERM_IMPLEMENTATION_H
 
 #include "mcrl2/atermpp/detail/global_aterm_pool.h"
 #include "mcrl2/atermpp/detail/aterm_container.h"
@@ -20,24 +19,22 @@ namespace atermpp
 namespace detail
 {
 template <typename T>
-const reference_aterm<T, typename std::enable_if_t<std::is_base_of_v<aterm_core, T>>>&
-reference_aterm<T, typename std::enable_if_t<std::is_base_of_v<aterm_core, T>>>::operator=(
-    const unprotected_aterm_core& other) noexcept
+  requires std::is_base_of_v<aterm_core, T>
+markable_aterm<T>& markable_aterm<T>::operator=(const unprotected_aterm_core& other) noexcept
 {
   mcrl2::utilities::shared_guard guard = detail::g_thread_term_pool().lock_shared();
   m_term = address(other);
   return *this;
-  }
+}
 
-  template <typename T>
-  const reference_aterm<T, typename std::enable_if_t<std::is_base_of_v<aterm_core, T>>>&
-  reference_aterm<T, typename std::enable_if_t<std::is_base_of_v<aterm_core, T>>>::operator=(
-      unprotected_aterm_core&& other) noexcept
-  {
-    mcrl2::utilities::shared_guard guard = detail::g_thread_term_pool().lock_shared();
-    m_term = address(other);
-    return *this;
-  }
+template <typename T>
+  requires std::is_base_of_v<aterm_core, T>
+markable_aterm<T>& markable_aterm<T>::operator=(unprotected_aterm_core&& other) noexcept
+{
+  mcrl2::utilities::shared_guard guard = detail::g_thread_term_pool().lock_shared();
+  m_term = address(other);
+  return *this;
+}
 
   template<typename T, typename Allocator>
   void aterm_allocator<T,Allocator>::deallocate(T* p, size_type n)
@@ -128,4 +125,4 @@ inline aterm_core& aterm_core::operator=(aterm_core&& other) noexcept
 
 } // namespace atermpp
 
-#endif // MCRL2_ATERMPP_TERM_IMPLEMENTATION_H
+#endif // MCRL2_ATERMPP_DETAIL_ATERM_IMPLEMENTATION_H

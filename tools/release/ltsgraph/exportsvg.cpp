@@ -52,7 +52,7 @@ inline QString svgColor(const QVector3D& color, const QVector3D defaultColor = Q
 inline QString svgNode(const Export::Node& node, const GLScene& scene)
 {
   QVector3D pos = scene.camera().worldToWindow(node.pos());
-  float size = scene.sizeOnScreen(node.pos(), scene.nodeSize()) / 2.0;
+  float size = static_cast<float>(scene.sizeOnScreen(node.pos(), static_cast<float>(scene.nodeSize())) / 2.0);
 
   return QString("\t<circle class=\"%5%6%7node\" cx=\"%1\" cy=\"%2\" r=\"%3\"%4/>\n")
     .arg(pos.x(), 6, 'f').arg(pos.y(), 6, 'f').arg(size)
@@ -89,22 +89,22 @@ inline QString svgEdge(const Export::Edge& edge, const GLScene& scene)
   const QVector3D to = control[3];
 
   // Calculate node and arrowhead sizes
-  const float fromNodeRadius = scene.sizeOnScreen(edge.from().pos(), scene.nodeSize()) / 2.0;
-  const float toNodeRadius = scene.sizeOnScreen(edge.to().pos(), scene.nodeSize()) / 2.0;
-  const float headLength = scene.sizeOnScreen(edge.to().pos(), scene.arrowheadSize);
+  const float fromNodeRadius = static_cast<float>(scene.sizeOnScreen(edge.from().pos(), static_cast<float>(scene.nodeSize())) / 2.0);
+  const float toNodeRadius = static_cast<float>(scene.sizeOnScreen(edge.to().pos(), static_cast<float>(scene.nodeSize())) / 2.0);
+  const float headLength = scene.sizeOnScreen(edge.to().pos(), static_cast<float>(scene.arrowheadSize));
 
   try
   {
     // Subtract the nodes and arrowhead from the curve
     using Ins = Intersection<Circle, CubicBezier>;
-    Ins ins1 = make_intersection(Circle{control[0], fromNodeRadius}, CubicBezier(control));
+    Ins ins1 = make_intersection(Circle{.center=control[0], .radius=fromNodeRadius}, CubicBezier(control));
     control = CubicBezier(control).trimFront(ins1.solve(ins1.guessNearFront()));
-    Ins ins2 = make_intersection(Circle{control[3], toNodeRadius + headLength}, CubicBezier(control));
+    Ins ins2 = make_intersection(Circle{.center=control[3], .radius=toNodeRadius + headLength}, CubicBezier(control));
     control = CubicBezier(control).trimBack(ins2.solve(ins2.guessNearBack()));
 
     // Calculate arrow position: find the closest point on the circle to the curve end
     const QVector3D top = control[3];
-    const QVector3D tip = Circle{to, toNodeRadius}.project(top);
+    const QVector3D tip = Circle{.center=to, .radius=toNodeRadius}.project(top);
 
     return QString("\t<path class=\"edge\" d=\"M%1 %2 C%3 %4, %5 %6, %7 %8\" />\n")
       .arg(control[0].x(), 6, 'f').arg(control[0].y(), 6, 'f')
@@ -125,9 +125,9 @@ inline QString svgEdge(const Export::Edge& edge, const GLScene& scene)
     else
     {
       // Still some space left: draw a straight line.
-      const QVector3D src = Circle{from, fromNodeRadius}.project(to);
-      const QVector3D tip = Circle{to, toNodeRadius}.project(from);
-      const QVector3D top = Circle{to, toNodeRadius + headLength}.project(from);
+      const QVector3D src = Circle{.center=from, .radius=fromNodeRadius}.project(to);
+      const QVector3D tip = Circle{.center=to, .radius=toNodeRadius}.project(from);
+      const QVector3D top = Circle{.center=to, .radius=toNodeRadius + headLength}.project(from);
 
       return QString("\t<path class=\"edge\" d=\"M%1 %2 L%3 %4\" />\n")
         .arg(src.x(), 6, 'f').arg(src.y(), 6, 'f')
@@ -141,7 +141,7 @@ inline QString escapeXML(const QString& str)
 {
   // Based on QString::toHtmlEscaped(), but added unicode escaping
   QString rich;
-  const int len = str.length();
+  const int len = static_cast<int>(str.length());
   rich.reserve(int(len * 1.1));
   for (int i = 0; i < len; ++i)
   {

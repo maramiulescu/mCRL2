@@ -178,7 +178,6 @@ struct structure_graph_builder
   // Erases all vertices in the set U.
   void erase_vertices(const vertex_set& U)
   {
-    // mCRL2log(log::debug) << "erasing nodes " << U << std::endl;
 
     using utilities::detail::contains;
 
@@ -221,7 +220,7 @@ struct structure_graph_builder
       }
     }
 
-    vertices().erase(vertices().begin() + vertices().size() - U.size(), vertices().end());
+    vertices().erase(vertices().begin() + static_cast<std::ptrdiff_t>(vertices().size() - U.size()), vertices().end());
 
     // Recreate the index
     m_vertex_map.clear();

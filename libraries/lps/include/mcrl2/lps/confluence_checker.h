@@ -7,7 +7,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 /// \file mcrl2/confluence_checker.h
-/// \brief Add your file description here.
+/// \brief Checks confluence of tau-summands in a linear process specification.
 
 // Interface to class Confluence_Checker
 // file: confluence_checker.h
@@ -172,9 +172,6 @@ private:
   /// \brief A linear process specification.
   Specification& f_lps;
 
-  /// \brief Flag indicating whether or not the tau actions of confluent tau summands are renamed to ctau.
-  // bool f_no_marking;
-
   /// \brief Flag indicating whether or not the process of checking the confluence of a summand stops when
   /// \brief a summand is encountered that is not confluent with the tau summand at hand.
   bool f_check_all;
@@ -227,7 +224,7 @@ private:
     bool& a_is_marked);
 
   // Returns a modified instance of a summand in which summation variables are uniquely renamed.
-  void uniquely_rename_summutation_variables(action_summand_type& summand);
+  void uniquely_rename_summation_variables(action_summand_type& summand);
 
 public:
   /// \brief Constructor that initializes Confluence_Checker::f_lps, Confluence_Checker::f_bdd_prover,
@@ -589,7 +586,7 @@ void Confluence_Checker<Specification>::print_counter_example()
 // --------------------------------------------------------------------------------------------
 
 template <typename Specification>
-void Confluence_Checker<Specification>::uniquely_rename_summutation_variables(
+void Confluence_Checker<Specification>::uniquely_rename_summation_variables(
   action_summand_type& summand)
 {
   data::mutable_map_substitution<> v_substitutions;
@@ -607,7 +604,6 @@ void Confluence_Checker<Specification>::uniquely_rename_summutation_variables(
   for (const data::variable& summation_variable : summation_variables)
   {
     core::identifier_string new_name = f_set_identifier_generator(summation_variable.name());
-    // mCRL2log(log::verbose) << "Renamed " << i->name() << " to " << new_name << std::endl;
 
     data::variable renamed_variable = data::variable(new_name, summation_variable.sort());
     new_summation_variables.push_front(renamed_variable);
@@ -681,7 +677,7 @@ bool Confluence_Checker<Specification>::check_summands(
 
     if (!f_no_sums)
     {
-      uniquely_rename_summutation_variables(tagged);
+      uniquely_rename_summation_variables(tagged);
     }
 
     const data::data_expression v_condition = get_confluence_condition(a_invariant, a_summand_1, tagged, v_variables, a_condition_type);

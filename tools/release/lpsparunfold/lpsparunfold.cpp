@@ -8,8 +8,8 @@
 //
 /// \file ./lpsparunfold.cpp
 
-#define TOOLNAME "lpsparunfold"
-#define AUTHORS "Frank Stappers, Jeroen Keiren, Thomas Neele"
+constexpr auto TOOLNAME = "lpsparunfold";
+constexpr auto AUTHORS = "Frank Stappers, Jeroen Keiren, Thomas Neele";
 
 // C++
 #include <climits>
@@ -68,12 +68,6 @@ class lpsparunfold_tool: public  rewriter_tool<input_output_tool>
     void parse_options(const command_line_parser& parser) override
     {
       super::parse_options(parser);
-
-//      if (((0 == parser.options.count("index")) && (0 == parser.options.count("sort"))) ||
-//          ((0 < parser.options.count("index") && (0 < parser.options.count("sort")))))
-//      {
-//        parser.error("Use either --sort or --index to unfold process parameters.");
-//      }
 
       // Parse string argument to [NUM] (a set of indices)
       if (0 < parser.options.count("index"))

@@ -22,7 +22,7 @@ A structure graph, see [KRW12]_, is a graph structure that captures BESs in thei
 
 .. _strcture-graph:
 
-.. admonition:: Definition (Structure graph)
+.. definition:: Structure graph
 
     A structure graph is a tuple `(V,E,d,r)` with `V` a set of nodes containing proposition variables, `E \subseteq V \times V` a set of edges, `r:V\rightarrow \mathbb{N}` a partial function that assigns a rank to each node, and `d:V\rightarrow \{\blacktriangle ,\blacktriangledown ,\top ,\bot \}` a partial function that assigns a decoration to each node. 
     A structure graph is formally defined using the following SOS rules, where `\mathtt{B}` is the BES and `\bnd(\mathtt{B})` its bound proposition variables, `X` is proposition variable, `f,f',g,g'` are proposition formulae and `\sigma \in \{\mu, \nu\}` is the fixpoint:
@@ -471,7 +471,7 @@ Function `SG^0` uses functions :ref:`decoration <decoration>` `\dec` and :ref:`r
 
 .. _decoration:
 
-.. admonition:: Definition (Decoration)
+.. definition:: Decoration
 
     Let `\varphi, \psi` and `\psi_i` for `0<i < n+1`, `\dec` is a partial function that assigns a decoration to a node in `V`, where `-` stands for undefined:
 
@@ -494,7 +494,7 @@ Function `SG^0` uses functions :ref:`decoration <decoration>` `\dec` and :ref:`r
 
 .. _rank:
 
-.. admonition:: Definition (Rank)
+.. definition:: Rank
 
   Every predicate variable bound in PBES `\E` is assigned a rank, where `\rnk_{\E}(X) \leq \rnk_{\E}(Y)` if `X` occurs before `Y` in `\E`, and `\rnk_{\E}(X)` is even is and only if `X` is labelled with a greatest fixpoint. 
   
@@ -504,7 +504,7 @@ Function `SG^0` is defined as follows:
 
 .. _sg0:
 
-.. admonition:: Definition (:math:`SG^0`)
+.. definition:: :math:`SG^0`
 
     .. math::
 
@@ -525,7 +525,7 @@ We define `SG^1` as follows:
 
 .. _sg1:
 
-.. admonition:: Definition (:math:`SG^1`)
+.. definition:: :math:`SG^1`
 
     .. math::
 
@@ -586,17 +586,11 @@ The tool ``pbessolve`` has a flag that is used to set the solving strategy. The 
 
 .. admonition:: List of solving strategies
 
-    .. math::
-        :nowrap:
-        :class: math-left
-
-        \begin{itemize}
-            \item 0- No on-the-fly solving is applied
-            \item 1- Propagate solved equations using an attractor
-            \item 2- Detect winning loops
-            \item 3- Solve subgames using a fatal attractor
-            \item 4- Solve subgames using the solver
-        \end{itemize}
+    - 0- No on-the-fly solving is applied
+    - 1- Propagate solved equations using an attractor
+    - 2- Detect winning loops
+    - 3- Solve subgames using a fatal attractor
+    - 4- Solve subgames using the solver
 
 
 Solving strategy *0- No on-the-fly solving is applied* is the combination of two techniques: *self-loop removal* and *propagation of solved equations*.
@@ -723,7 +717,7 @@ Self-loop removal example
         act b;
 
         proc L(n: Nat) = (n==1) -> b . L(2)
-                    + (n==2) -> b.  L(2);
+                       + (n==2) -> b.  L(2);
         init L(1);
 
     The labelled transition system underlying this specification is
@@ -762,9 +756,9 @@ Self-loop removal example
     ::
 
         pbes mu X(n_L: Nat) =
-            (exists e_L: Bool. val(if(e_L, n_L == 2, n_L == 1)) && X(2)) || Y(n_L);
-            nu Y(n_L: Nat) =
-            exists e_L: Bool. val(if(e_L, n_L == 2, n_L == 1)) && Y(2);
+                   (exists e_L: Bool. val(if(e_L, n_L == 2, n_L == 1)) && X(2)) || Y(n_L);
+             nu Y(n_L: Nat) =
+                   exists e_L: Bool. val(if(e_L, n_L == 2, n_L == 1)) && Y(2);
 
         init X(1);
 
@@ -999,7 +993,7 @@ Self-loop removal example
         Y(19) = Y(20) with rank 0
         Y(20) = Y(10) with rank 0
 
-    The instantiation procedure stops when it finds that `Y(10)`, which is solved, is successor of `Y(20)`, and the structure graph is simplified to the following
+    The instantiation procedure stops when it finds that `Y(10)`, which is solved, is a successor of `Y(20)`, and the structure graph is simplified to the following
 
     .. math::
         :nowrap:
@@ -1029,9 +1023,9 @@ Self-loop removal example
 Optimizations 1-4
 """""""""""""""""
 
-Solving strategies 1 to 4 each use a different function for `applyAttractor`, in Algorithm :ref:`PbesInstHolder <placeholder>`. These solving strategies are considered to be *optimizations* of solving strategy 0.
+Solving strategies 1 to 4 each use a different function for `applyAttractor`, in Algorithm :ref:`PbesInstHolder <alg-pbesinstholder>`. These solving strategies are considered to be *optimizations* of solving strategy 0.
 
-.. _placeholder:
+.. _alg-pbesinstholder:
 
 .. math::
     :nowrap:
@@ -2053,11 +2047,22 @@ The above optimisation can be integrated in the instantiation algorithm as follo
 Additional optimizations to PBES instantiation
 ----------------------------------------------
 
-During the execution of the instantiation algorithm (with any solving strategy), the set *todo*  may contain nodes that can be proven to be irrelevant, i.e., the solution of the PBES can already be computed without exploring these irrelevant nodes. 
-To this end we present a routine, :ref:`PruneTodo <prune-todo>`, that partitions the set *todo* into a new set *todo* and a set *irrelevant*. Note that elements from *irrelevant* may be moved to the new set *todo* when new elements are added to the *todo* set.
+During the execution of the instantiation algorithm (with any solving strategy), the set *todo*  may contain nodes that become irrelevant, 
+as the solution of the PBES can already be computed without exploring these irrelevant nodes. This for instance happens in a right hand
+side `X\vee Y` when `X` is true. The variable `Y` does not need to be explored further. 
+To this end we present a routine, :ref:`PruneTodo <prune-todo>`, that recalculates the set *todo*. 
 
 In the tool ``pbessolve``, flag ``--prune-todo-list`` can be used to enable this routine.
-The routine can be used in combination with any solving strategy.
+The routine can be used in combination with any solving strategy, and it takes time at most proportional to the time to instantiate the PBES.
+
+Variables that are removed from the todo set, may become relevant again, but may not be added automatically to *todo*. 
+Consider equations `\mu X=Y, \mu Z=X`. At some point `X` is explored and `Y` is in the todo set. If `X` becomes irrelevant,
+`Y` is removed from the todo set, without being explored. If at a later point `Z` is explored, `X` becomes relevant again, but
+as `X` is explored already `X` will not be investigated further. Hence, `Y` is not added to *todo*. 
+Therefore, it is needed that once pruning has taken place once,
+it must be repeated to detect such variables to be readded to *todo*. 
+
+In particular when *todo* becomes empty, it is necessary to do one more prune, to be sure that all reachable BES variables are being investigated. 
 
 In Algorithm :ref:`PbesInstStructureGraphPrune <solve-prune>` we present the instantiation algorithm in which pruning is applied.
 In fact, algorithm :ref:`PbesInstStructureGraphPrune <solve-prune>` uses :ref:`PruneTodo <prune-todo>`. 
@@ -2069,23 +2074,21 @@ In fact, algorithm :ref:`PbesInstStructureGraphPrune <solve-prune>` uses :ref:`P
     :class: math-left
 
     \begin{algorithmic}[1]
-    \Function {PruneTodo}{$\init, \td, \irr$}
+    \Function {PruneTodo}{$\init, \td$}
         \State $\td' := \{\init\}$
-        \State $\done' := \emptyset$
+        \State $\done' := \{\init\}$
         \State $\newtd := \emptyset$
         \While {$\td' \neq \emptyset$}
             \State $\mathbf{choose}\ u \in \td'$
             \State $\td' := \td' \setminus \{u\}$
-            \State $\done' := \done' \cup \{u\}$
             \If {$\dec(u) = - \wedge \scc(u) = \emptyset$}
                 \State $\newtd := \newtd \cup \{ u\}$
             \ElsIf {$u \notin S_0 \cup S_1$}
                 \State $\td' := \td' \cup (\scc(u) \setminus \done')$
+                \State $\done' := \done' \cup \scc(u)$
             \EndIf
         \EndWhile
-        \State $\newtd := \newtd \cap (\td \cup \irr)$  
-        \State $\newirr := (\td \cup \newirr) \setminus \newtd$             
-        \State \Return $\newtd, \newirr$
+        \State \Return $\newtd$
     \EndFunction
     \end{algorithmic}
 
@@ -2102,12 +2105,11 @@ The above routine can be integrated in the instantiation algorithm as follows. N
     \Function{\mbox{PbesInstStructureGraphPrune}{$(\E, X_{\init}(e_{\init}), R, E^0, \lsetpre)$}}{}
         \State $ \init := X_{\init}(e_{\init})$
         \State $\td := \{\init\}$
-        \State {\colorbox{lightgray}{$\irr := \emptyset$}} 
         \State $ \discovered := \{\init\}$
         \State $ (V,E,d,r) := (\emptyset, \emptyset, -, -)$
         \State $ S_0 := \emptyset$
         \State $ S_1 := \emptyset$
-        \While {{\colorbox{lightgray}{$(\td \setminus \irr)$}} $\neq \emptyset \wedge X_{\init}(e_{\init}) \notin S_0 \cup S_1$}
+        \While {$\td \neq \emptyset \wedge X_{\init}(e_{\init}) \notin S_0 \cup S_1$}
             \State $\mathbf{choose}\ X_k(e) \in \td$ 
             \State $\td := \td \setminus \{X_k(e)\}$
             \State $\psi_{X_k}^e := R(\varphi_{X_k}[d_k := e])$
@@ -2124,11 +2126,9 @@ The above routine can be integrated in the instantiation algorithm as follows. N
             \State $\psi_{X_k}^e := Rw^*(\psi_{X_k}^e, \{X \mid (X_k(e), X) \in E^0\}, \lsetpre)$
             \State $(V', E', d', r') := SG^0(X_k(e), \psi_{X_k}^e, \dec(\psi_{X_k}^e), \rnk(X_k(e)))$
             \State $(V,E, d, r) := (V \cup V',E \cup E',d'\lceil d,r' \lceil r)$
-            \State $\td := \td \cup (\occ(\psi_{X_k}^e) \setminus$ {\colorbox{lightgray}{$(\discovered \setminus \irr)$}}$)$
+            \State $\td := \td \cup \occ(\psi_{X_k}^e) \setminus \discovered )$
             \State $\discovered := \discovered \cup \occ(\psi_{X_k}^e)$
-            \State {\colorbox{lightgray}{$\irr := \irr 
-            \setminus \occ(\psi_{X_k}^e)$}} 
-            \State {\colorbox{lightgray}{$\td, \irr := \text{\textsc{PruneTodo}}(\init, \td, \irr) \text{ (executed periodically)}$}} 
+            \State {\colorbox{lightgray}{$\td := \text{\textsc{PruneTodo}}(\init, \td) \text{ (executed periodically)}$}} 
         \EndWhile
         \State $V := \textsc{ExtractMinimalStructureGraph}(V, \init, S_0, S_1, \tau_0, \tau_1)$
         \State \Return $(V,E, d, r)$
@@ -2203,7 +2203,7 @@ Before defining Algorithm :ref:`SolveRecursiveStrategies <ziel-expl-tau>` which 
 
 .. _strategy:
 
-.. admonition:: Definition (:math:`\tau(U)`) 
+.. definition:: :math:`\tau(U)` 
 
     Let `U \subseteq V`, we define the strategy for nodes in set `U`, denoted as `\tau(U)`, such that:
 
@@ -2218,7 +2218,7 @@ Before defining Algorithm :ref:`SolveRecursiveStrategies <ziel-expl-tau>` which 
 
 .. _priority:
 
-.. admonition:: Definition (:math:`f_1 \lceil f_2`)
+.. definition:: :math:`f_1 \lceil f_2`
 
     Let `f_1, f_2: S \rightarrow T` be partial functions and `x \in S`, we define the priority function `f_1 \lceil f_2` as follows:
 

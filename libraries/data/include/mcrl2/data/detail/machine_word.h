@@ -12,11 +12,11 @@
 #ifndef MCRL2_DATA_DETAIL_MACHINE_WORD_H
 #define MCRL2_DATA_DETAIL_MACHINE_WORD_H
 
-#include <assert.h>
-#include <limits>
 #include "mcrl2/data/bool.h"
 #include "mcrl2/data/machine_number.h"
 #include "mcrl2/data/machine_word.h"
+#include <cassert>
+#include <limits>
 
 namespace mcrl2::data::sort_machine_word
 {
@@ -177,7 +177,7 @@ std::size_t div_triple_doubleword(std::size_t n1, std::size_t n2, std::size_t n3
 
 inline std::size_t sqrt_word(const std::size_t n)
 {
-  return sqrt(n);
+  return static_cast<std::size_t>(sqrt(static_cast<double>(n)));
 }
 
 std::size_t sqrt_doubleword(std::size_t n1, std::size_t n2);

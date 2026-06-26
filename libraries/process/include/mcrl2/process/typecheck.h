@@ -60,7 +60,7 @@ std::string pp(const std::set<data::sort_expression_list>& ll)
       empty2=false;
     }
     result=result+(empty1?"":", ");
-    empty2=false;
+    empty1=false;
   }
   return result;
 }
@@ -447,7 +447,6 @@ struct typecheck_builder: public process_expression_builder<typecheck_builder>
         }
         if (c_sorts_defined)
         {
-          // c_sorts = sorts_list_union(c_sorts, action_sorts(a));
           std::set<data::sort_expression_list> s=action_sorts(a);
           c_sorts.insert(s.begin(), s.end());
         }

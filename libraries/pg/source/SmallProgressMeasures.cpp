@@ -11,6 +11,7 @@
 #include "mcrl2/pg/attractor.h"
 #include "mcrl2/pg/SCC.h"
 
+#include <array>
 #include <cstring>
 #include <memory>
 
@@ -67,7 +68,7 @@ SmallProgressMeasures::SmallProgressMeasures(const ParityGame& game,
     for (std::size_t n = 0; n < len_; ++n)
     {
         std::size_t prio = 2*n + 1 - p_;
-        M_[n] = (prio < game.d()) ? game_.cardinality(prio) + 1 : 0;
+        M_[n] = (prio < game.d()) ? game_.cardinality(static_cast<int>(prio)) + 1 : 0;
     }
 }
 
@@ -197,7 +198,6 @@ verti SmallProgressMeasures::solve_one(LiftingStrategy2 &ls)
     lift_to(v, vec(get_successor(v)), compare_strict(v));
     assert(success);
     dirty_[v] = false;
-    // debug_print_vertex(v);
 
     for ( const verti *it  = game_.graph().pred_begin(v),
                       *end = game_.graph().pred_end(v); it != end; ++it )
@@ -229,7 +229,7 @@ verti SmallProgressMeasures::solve_one(LiftingStrategy2 &ls)
                 changed = true;
             }
             else
-            if (vector_cmp(vec(v), vec(get_successor(u)), len_) > 0)
+            if (vector_cmp(vec(v), vec(get_successor(u)), static_cast<int>(len_)) > 0)
             {   // maximum successor changed
                 strategy_[u] = v;
                 changed = true;
@@ -285,7 +285,7 @@ void SmallProgressMeasures::get_strategy(ParityGame::Strategy &strat) const
 }
 
 // Returns the same result as lift_to, but doesn't actually change anything:
-bool SmallProgressMeasures::less_than(verti v, const verti vec2[], bool carry)
+bool SmallProgressMeasures::less_than(verti v, const verti* vec2, bool carry)
 {
   if (is_top(v))
   {
@@ -299,7 +299,7 @@ bool SmallProgressMeasures::less_than(verti v, const verti vec2[], bool carry)
     return comparison < 0 || (comparison <= 0 && carry);
 }
 
-bool SmallProgressMeasures::lift_to(verti v, const verti vec2[], bool carry)
+bool SmallProgressMeasures::lift_to(verti v, const verti* vec2, bool carry)
 {
   if (is_top(v))
   {
@@ -492,7 +492,7 @@ ParityGame::Strategy SmallProgressMeasuresSolver::solve_normal()
 ParityGame::Strategy SmallProgressMeasuresSolver::solve_alternate()
 {
     // Create two SPM and two lifting strategy instances:
-    std::unique_ptr<SmallProgressMeasures> spm[2];
+    std::array<std::unique_ptr<SmallProgressMeasures>, 2> spm;
     spm[0] = std::make_unique<DenseSPM>(game_, PLAYER_EVEN, stats_, vmap_, vmap_size_);
     spm[1] = std::make_unique<DenseSPM>(game_, PLAYER_ODD, stats_, vmap_, vmap_size_);
 
@@ -507,7 +507,7 @@ ParityGame::Strategy SmallProgressMeasuresSolver::solve_alternate()
 
         /* Note: work size should be large enough so that dumb strategies like
                  linear lifting are still able to detect termination! */
-        for ( long long work = game_.graph().V(); work > 0 && !half_solved;
+        for ( long long work = static_cast<long long>(game_.graph().V()); work > 0 && !half_solved;
               work -= SmallProgressMeasures::work_size )
         {
             half_solved = spm[player]->solve_some(*ls) > 0;
@@ -663,7 +663,7 @@ ParityGame::Strategy SmallProgressMeasuresSolver2::solve_normal()
 ParityGame::Strategy SmallProgressMeasuresSolver2::solve_alternate()
 {
     // Create two SPM and two lifting strategy instances:
-    std::unique_ptr<SmallProgressMeasures> spm[2];
+    std::array<std::unique_ptr<SmallProgressMeasures>, 2> spm;
     spm[0] = std::make_unique<DenseSPM>(game_, PLAYER_EVEN, stats_, vmap_, vmap_size_);
     spm[1] = std::make_unique<DenseSPM>(game_, PLAYER_ODD, stats_, vmap_, vmap_size_);
 
@@ -676,7 +676,7 @@ ParityGame::Strategy SmallProgressMeasuresSolver2::solve_alternate()
         std::unique_ptr<LiftingStrategy2> ls(lsf_->create2(game_, *spm[player]));
         spm[player]->initialize_lifting_strategy(*ls);
 
-        for ( long long work = game_.graph().V(); work > 0 && !half_solved;
+        for ( long long work = static_cast<long long>(game_.graph().V()); work > 0 && !half_solved;
               work -= SmallProgressMeasures::work_size )
         {
             half_solved = spm[player]->solve_some(*ls) > 0;
@@ -758,7 +758,7 @@ DenseSPM::~DenseSPM()
     delete[] spm_;
 }
 
-void DenseSPM::set_vec(verti v, const verti src[], bool carry)
+void DenseSPM::set_vec(verti v, const verti* src, bool carry)
 {
     verti *dst = &spm_[(std::size_t)len_*v];
     const int l = len(v);                   // l: vector length

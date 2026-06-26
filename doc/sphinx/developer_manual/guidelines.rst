@@ -18,7 +18,7 @@ Organisation of libraries:
   ============= =========================================================
   example	      Sample program files
   include	      Header files
-  src	          Source files which must be compiled to build the library
+  source	      Source files which must be compiled to build the library
   test	        Regression or other test programs or scripts
   ============= =========================================================
 
@@ -240,7 +240,7 @@ use. It should consist of the following sections (in that order):
 * Authors: the line ``Written by AUTHORS``.
   where ``AUTHORS`` stands for the names of the authors.
 * Reporting bugs:
-  ``Report bugs at our issue tracking system <http://www.mcrl2.org/issuetracker>``.
+  ``Report bugs at our issue tracking system <https://www.mcrl2.org/issuetracker>``.
 
 Reference manual
 ^^^^^^^^^^^^^^^^

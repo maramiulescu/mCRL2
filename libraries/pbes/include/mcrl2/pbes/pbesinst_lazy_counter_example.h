@@ -39,7 +39,7 @@ propositional_variable_instantiation rewrite_PVI(const propositional_variable_in
     data::data_expression_vector params_r;
     for (std::vector<data::data_expression>::size_type i = 0; i < params.size(); i++)
     {
-      if (Rx.find(i) != Rx.end())
+      if (Rx.find(static_cast<int>(i)) != Rx.end())
       {
         continue; // parameter is redundant
       }
@@ -62,7 +62,6 @@ struct rewrite_star_substitution
 {
   const fixpoint_symbol& symbol;
   const propositional_variable_instantiation& X;
-  const pbes_expression& psi;
   const structure_graph& G;
   bool alpha;
   const std::unordered_map<pbes_expression, structure_graph::index_type>& mapping;
@@ -70,14 +69,12 @@ struct rewrite_star_substitution
 
   rewrite_star_substitution(const fixpoint_symbol& symbol,
       const propositional_variable_instantiation& X,
-      const pbes_expression& psi,
       const structure_graph& G,
       bool alpha,
       const std::unordered_map<pbes_expression, structure_graph::index_type>& mapping,
       const std::unordered_map<std::string, std::set<int>>& R)
       : symbol(symbol),
       X(X),
-      psi(psi),
       G(G),
       alpha(alpha),
       mapping(mapping),
@@ -95,7 +92,7 @@ struct rewrite_star_substitution
     std::smatch match;
 
     // Now we need to find all reachable X --> Y, following vertices that are not ranked.
-    mCRL2log(log::debug) << "X = " << X << ", psi = " << psi << std::endl;
+    mCRL2log(log::debug) << "X = " << X << std::endl;
 
     std::unordered_set<pbes_expression> Ys;
 
@@ -224,18 +221,18 @@ class pbesinst_counter_example_structure_graph_algorithm : public pbesinst_struc
 {
 public:
   pbesinst_counter_example_structure_graph_algorithm(const pbessolve_options& options,
-      const pbes& p,
-      const structure_graph& SG,
-      bool _alpha,
-      const std::unordered_map<pbes_expression, structure_graph::index_type>& _mapping,
-      structure_graph& G,
-      std::optional<data::rewriter> rewriter = std::nullopt,
-      const std::unordered_map<std::string, std::set<int>> _R = {})
-      : pbesinst_structure_graph_algorithm(options, p, G, rewriter),
-        G(SG),
-        alpha(_alpha),
-        mapping(_mapping),
-        R(_R)
+    const pbes& p,
+    const structure_graph& SG,
+    bool _alpha,
+    const std::unordered_map<pbes_expression, structure_graph::index_type>& _mapping,
+    structure_graph& G,
+    std::optional<data::rewriter> rewriter = std::nullopt,
+    const std::unordered_map<std::string, std::set<int>> R = {})
+    : pbesinst_structure_graph_algorithm(options, p, G, rewriter),
+      G(SG),
+      alpha(_alpha),
+      mapping(_mapping),
+      R(R)
   {}
   // TODO ensure that the PVIs in mapping match the shape of the
   // vertices in G after they are rewritten with R.
@@ -247,7 +244,7 @@ public:
     const pbes_expression& phi) override
   {
     return compose_substitutions(pbesinst_structure_graph_algorithm::phi_substitution(thread_index, symbol, X, phi), 
-      detail::rewrite_star_substitution(symbol, X, phi, G, alpha, mapping, R));
+      detail::rewrite_star_substitution(symbol, X, G, alpha, mapping, R));
   }
 
 private:
@@ -261,18 +258,18 @@ class pbesinst_counter_example_structure_graph_algorithm2 : public pbesinst_stru
 {
 public:
   pbesinst_counter_example_structure_graph_algorithm2(const pbessolve_options& options,
-      const pbes& p,
-      const structure_graph& SG,
-      bool _alpha,
-      const std::unordered_map<pbes_expression, structure_graph::index_type>& _mapping,
-      structure_graph& G,
-      std::optional<data::rewriter> rewriter = std::nullopt,
-      const std::unordered_map<std::string, std::set<int>> _R = {})
-      : pbesinst_structure_graph_algorithm2(options, p, G, rewriter),
-        G(SG),
-        alpha(_alpha),
-        mapping(_mapping),
-        R(_R)
+    const pbes& p,
+    const structure_graph& SG,
+    bool _alpha,
+    const std::unordered_map<pbes_expression, structure_graph::index_type>& _mapping,
+    structure_graph& G,
+    std::optional<data::rewriter> rewriter = std::nullopt,
+    const std::unordered_map<std::string, std::set<int>> R = {})
+    : pbesinst_structure_graph_algorithm2(options, p, G, rewriter),
+      G(SG),
+      alpha(_alpha),
+      mapping(_mapping),
+      R(R)
   {}
 
   std::function<pbes_expression(const propositional_variable_instantiation&)> phi_substitution(
@@ -282,7 +279,7 @@ public:
     const pbes_expression& phi) override
   {
     return compose_substitutions(pbesinst_structure_graph_algorithm::phi_substitution(thread_index, symbol, X, phi),
-      detail::rewrite_star_substitution(symbol, X, phi, G, alpha, mapping, R));
+      detail::rewrite_star_substitution(symbol, X, G, alpha, mapping, R));
   }
 
 private:

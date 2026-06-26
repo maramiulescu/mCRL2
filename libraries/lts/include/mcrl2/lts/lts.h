@@ -111,7 +111,7 @@ class lts: public LTS_BASE
   protected:
 
     states_size_type m_nstates;
-    states_size_type m_init_state;
+    states_size_type m_init_state = 0;
     std::vector<transition> m_transitions;
     std::vector<STATE_LABEL_T> m_state_labels;
     std::vector<ACTION_LABEL_T> m_action_labels; // At position 0 we always find the label that corresponds to tau.
@@ -185,6 +185,12 @@ class lts: public LTS_BASE
     {
       assert(m_action_labels.size()>0 && m_action_labels[const_tau_label_index]==ACTION_LABEL_T::tau_action());
     }
+
+    /** \brief Move constructor. Defaulted to avoid expensive copies when an lts is moved. */
+    lts(lts&&) = default;
+
+    /** \brief Move assignment operator. Defaulted to avoid expensive copies when an lts is moved. */
+    lts& operator=(lts&&) = default;
 
     /** \brief Standard assignment operator.
      *  \param[in] l The lts to be assigned. */
@@ -379,10 +385,7 @@ class lts: public LTS_BASE
     /** \brief Provide the index of the label that represents tau.
      *  \return const_tau_label_index, which is 0, i.e. the index of the label tau.
      */
-    const labels_size_type tau_label_index() const
-    {
-      return const_tau_label_index;
-    }
+    labels_size_type tau_label_index() const { return const_tau_label_index; }
 
     /** \brief Sets the label of a state.
      * \param[in] state The number of the state.
@@ -497,7 +500,7 @@ class lts: public LTS_BASE
      *  \details This removes the action labels of an lts.
      *           It also resets the information
      *           regarding to what actions labels are tau.
-     *           It will not change the number of action labels. */
+     *           The number of action labels is reset to one, namely the tau label. */
     void clear_actions()
     {
       m_action_labels.clear();
@@ -520,7 +523,7 @@ class lts: public LTS_BASE
       m_state_labels.resize(num_states());
       for(std::size_t i=0; i<num_states(); ++i)
       {
-        set_state_label(i,STATE_LABEL_T::number_to_label(i));   // YYYYYY TODO FINISH.
+        set_state_label(i,STATE_LABEL_T::number_to_label(i));
       }
     }
 
@@ -575,7 +578,7 @@ class lts: public LTS_BASE
     /** \brief Rename the hidden labels in the hidden label map explicitly in the lts. 
      *  \details The hidden label set is cleared as this information is not of any use anymore.
      */
-    void rename_hidden_labels_to_tau(void)
+    void rename_hidden_labels_to_tau()
     {
       if (m_hidden_label_set.size()>0)    // Check whether there is something to rename.
       {

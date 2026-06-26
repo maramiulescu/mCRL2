@@ -7,9 +7,8 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#ifndef ATERMPP_DETAIL_ATERM_POOL_IMPLEMENTATION_H
-#define ATERMPP_DETAIL_ATERM_POOL_IMPLEMENTATION_H
-#pragma once
+#ifndef MCRL2_ATERMPP_DETAIL_ATERM_POOL_IMPLEMENTATION_H
+#define MCRL2_ATERMPP_DETAIL_ATERM_POOL_IMPLEMENTATION_H
 
 #include <chrono>
 #include "aterm_pool.h"
@@ -32,8 +31,8 @@ aterm_pool::aterm_pool() :
   ),
   m_appl_dynamic_storage(*this)
 {
-  m_count_until_collection = capacity();
-  m_count_until_resize = m_int_storage.capacity();
+  m_count_until_collection = static_cast<long>(capacity());
+  m_count_until_resize = static_cast<long>(m_int_storage.capacity());
 
   if constexpr (EnableAggressiveGarbageCollection) 
   {
@@ -182,7 +181,7 @@ void aterm_pool::created_term(bool allow_collect, mcrl2::utilities::shared_mutex
 
   if (m_count_until_resize.load(std::memory_order_relaxed) <= 0)
   {
-    if (allow_collect)
+    if (allow_collect && m_enable_resize)
     {
       resize_if_needed(shared_mutex);
     }
@@ -267,7 +266,7 @@ void aterm_pool::collect_impl(mcrl2::utilities::shared_mutex& shared_mutex)
     print_performance_statistics();
 
     // Use some heuristics to determine when the next collect should be called automatically.
-    m_count_until_collection = size() + protection_set_size();
+    m_count_until_collection = static_cast<long>(size() + protection_set_size());
 
     if constexpr (EnableAggressiveGarbageCollection) 
     {
@@ -283,7 +282,7 @@ function_symbol aterm_pool::create_function_symbol(const std::string& name, cons
 
 function_symbol aterm_pool::create_function_symbol(std::string&& name, const std::size_t arity, const bool check_for_registered_functions)
 {
-  return m_function_symbol_pool.create(std::forward<std::string>(name), arity, check_for_registered_functions);
+  return m_function_symbol_pool.create(std::move(name), arity, check_for_registered_functions);
 }
 
 bool aterm_pool::create_int(aterm& term, size_t val)
@@ -375,6 +374,11 @@ bool aterm_pool::create_appl_dynamic(aterm& term,
 
 void aterm_pool::resize_if_needed(mcrl2::utilities::shared_mutex& mutex)
 {
+  if (m_count_until_resize.load(std::memory_order_relaxed) > 0)
+  {
+    return;
+  }
+
   mcrl2::utilities::lock_guard guard = mutex.lock();
   if (m_count_until_resize > 0)
   {
@@ -428,4 +432,4 @@ std::size_t aterm_pool::protection_set_size() const
 } // namespace atermpp::detail
 
 
-#endif // ATERMPP_DETAIL_ATERM_POOL_IMPLEMENTATION_H
+#endif // MCRL2_ATERMPP_DETAIL_ATERM_POOL_IMPLEMENTATION_H

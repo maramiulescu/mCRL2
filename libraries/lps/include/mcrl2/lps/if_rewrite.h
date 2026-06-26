@@ -7,7 +7,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 /// \file mcrl2/lps/if_rewrite.h
-/// \brief add your file description here.
+/// \brief Applies the if rewriter to the data expressions in an LPS.
 
 #ifndef MCRL2_LPS_IF_REWRITE_H
 #define MCRL2_LPS_IF_REWRITE_H
@@ -37,20 +37,22 @@ struct if_rewrite_builder: public lps::data_expression_builder<if_rewrite_builde
 
 } // namespace detail
 
-/// \brief Applies the one point rule rewriter to all embedded data expressions in an object x
+/// \brief Applies the if rewriter to all embedded data expressions in an object x
 /// \param x an object containing data expressions
 template <typename T>
-void if_rewrite(T& x, std::enable_if_t<!std::is_base_of_v<atermpp::aterm, T>>* = nullptr)
+  requires(!std::is_base_of_v<atermpp::aterm, T>)
+void if_rewrite(T& x)
 {
   detail::if_rewrite_builder f{};
   f.update(x);
 }
 
-/// \brief Applies the one point rule rewriter to all embedded data expressions in an object x
+/// \brief Applies the if rewriter to all embedded data expressions in an object x
 /// \param x an object containing data expressions
 /// \return the rewrite result
 template <typename T>
-T if_rewrite(const T& x, std::enable_if_t<std::is_base_of_v<atermpp::aterm, T>>* = nullptr)
+  requires(std::is_base_of_v<atermpp::aterm, T>)
+T if_rewrite(const T& x)
 {
   T result;
   detail::if_rewrite_builder f{};

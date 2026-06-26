@@ -13,11 +13,12 @@
 #define MCRL2_DATA_ENUMERATOR_H
 
 #include <boost/iterator/iterator_facade.hpp>
+#include "mcrl2/utilities/math.h"
 #include "mcrl2/atermpp/standard_containers/deque.h"
 #include "mcrl2/core/detail/print_utility.h"
 #include "mcrl2/data/rewriter.h"
+#include "mcrl2/data/concepts.h"
 #include "mcrl2/data/substitutions/enumerator_substitution.h"
-#include "mcrl2/utilities/math.h"
 
 namespace mcrl2::data
 {
@@ -75,7 +76,7 @@ data_expression make_if_expression_(std::size_t& function_index,
 }
 
 /// \brief Computes the elements of a finite set sort, and puts them in result. If there are too many elements, false is returned.
-template <class Rewriter, class MutableSubstitution>
+template <class Rewriter, IsSubstitution MutableSubstitution>
 bool compute_finite_set_elements(const container_sort& sort,
                                  const data_specification& dataspec,
                                  Rewriter datar, MutableSubstitution& sigma,
@@ -386,7 +387,7 @@ class enumerator_list_element_with_substitution: public enumerator_list_element<
     }
 
     /// \brief Adds the assignments that correspond with this element to the substitution result.
-    template <typename VariableList, typename MutableSubstitution, typename Rewriter>
+    template <typename VariableList, IsSubstitution MutableSubstitution, typename Rewriter>
     void add_assignments(const VariableList& v, MutableSubstitution& result, const Rewriter& rewriter) const
     {
       data::enumerator_substitution sigma(m_variables, m_expressions);
@@ -398,7 +399,7 @@ class enumerator_list_element_with_substitution: public enumerator_list_element<
     }
 
     /// \brief Removes the assignments corresponding with this element from the substitution result.
-    template <typename VariableList, typename MutableSubstitution>
+    template <typename VariableList, IsSubstitution MutableSubstitution>
     void remove_assignments(const VariableList& v, MutableSubstitution& result) const
     {
       for (const data::variable& v_i: v)
@@ -626,7 +627,7 @@ class enumerator_algorithm
       return out.str();
     }
 
-    template <typename Expression, typename MutableSubstitution>
+    template <typename Expression, IsSubstitution MutableSubstitution>
     inline
     Expression rewrite(const Expression& phi, MutableSubstitution& sigma) const
     {
@@ -636,7 +637,7 @@ class enumerator_algorithm
       return const_cast<Rewriter&>(R)(phi, sigma);
     }
 
-    template <typename Expression, typename MutableSubstitution>
+    template <typename Expression, IsSubstitution MutableSubstitution>
     inline
     void rewrite(Expression& result, const Expression& phi, MutableSubstitution& sigma) const
     {
@@ -696,7 +697,7 @@ class enumerator_algorithm
     /// \pre !P.empty()
     /// \return If the return value is true, enumeration will be interrupted
     template <typename EnumeratorListElement,
-              typename MutableSubstitution,
+              IsSubstitution MutableSubstitution,
               typename ReportSolution,
               typename Reject = always_false<typename EnumeratorListElement::expression_type>,
               typename Accept = always_false<typename EnumeratorListElement::expression_type>
@@ -731,33 +732,35 @@ class enumerator_algorithm
                             };
 
       auto add_element_with_variables = [&](const data::variable_list& variables,
-                                            const data::variable_list& added_variables,
-                                            const typename EnumeratorListElement::expression_type& phi,
-                                            const data::variable& v,
-                                            const data::data_expression& e,
-                                            const bool print=false
-                                           ) -> bool
-                                           {
-                                             rewrite(P.scratch_expression, phi, sigma);
-                                             if (reject(P.scratch_expression))
-                                             {
-                                               return false;
-                                             }
-                                             bool added_variables_empty = added_variables.empty() || (P.scratch_expression == phi && m_accept_solutions_with_variables);
-                                             if ((accept(P.scratch_expression) && m_accept_solutions_with_variables) || (variables.empty() && added_variables_empty))
-                                             {
-                                               return report_solution(P.enumerator_element_cache(variables + added_variables, P.scratch_expression, p, v, e));
-                                             }
-                                             if (added_variables_empty)
-                                             {
-                                               P.emplace_back(variables, P.scratch_expression, p, v, e);
-                                             }
-                                             else
-                                             {
-                                               P.emplace_back(variables + added_variables, P.scratch_expression, p, v, e);
-                                             }
-                                             return false;
-                                           };
+                                          const data::variable_list& added_variables,
+                                          const typename EnumeratorListElement::expression_type& phi,
+                                          const data::variable& v,
+                                          const data::data_expression& e,
+                                          const bool /*print*/ = false) -> bool
+      {
+        rewrite(P.scratch_expression, phi, sigma);
+        if (reject(P.scratch_expression))
+        {
+          return false;
+        }
+        bool added_variables_empty
+          = added_variables.empty() || (P.scratch_expression == phi && m_accept_solutions_with_variables);
+        if ((accept(P.scratch_expression) && m_accept_solutions_with_variables)
+            || (variables.empty() && added_variables_empty))
+        {
+          return report_solution(
+            P.enumerator_element_cache(variables + added_variables, P.scratch_expression, p, v, e));
+        }
+        if (added_variables_empty)
+        {
+          P.emplace_back(variables, P.scratch_expression, p, v, e);
+        }
+        else
+        {
+          P.emplace_back(variables + added_variables, P.scratch_expression, p, v, e);
+        }
+        return false;
+      };
 
       const variable_list& v = p.variables();
       const typename EnumeratorListElement::expression_type& phi = p.expression();
@@ -814,7 +817,6 @@ class enumerator_algorithm
         if (dataspec.is_certainly_finite(element_sort))
         {
           const data_expression false_term = sort_set::false_function(element_sort);
-          // const data_expression lambda_term = abstraction(lambda_binder(), { variable(id_generator(), element_sort) }, sort_bool::false_());
           const variable fset_variable(id_generator(), sort_fset::fset(element_sort));
           data_expression e = sort_set::constructor(element_sort, false_term, fset_variable);
           sigma[v1] = e;
@@ -890,7 +892,6 @@ class enumerator_algorithm
             }
             else
             {
-              // const data_expression e1 = r(c);
               r(P.scratch_data_expression,c,sigma); // sigma is not used, but in this way no dummy sigma needs to be created. 
               sigma[v1] = P.scratch_data_expression;
               if (add_element(v_tail, phi, v1, P.scratch_data_expression))
@@ -923,7 +924,7 @@ class enumerator_algorithm
     /// \param accept Elements p for which accept(p) is true are reported as a solution, even if the list of variables of the enumerator element is non-empty.
     /// \return The number of elements that have been processed
     template <typename EnumeratorListElement,
-              typename MutableSubstitution,
+              IsSubstitution MutableSubstitution,
               typename ReportSolution,
               typename Reject = always_false<typename EnumeratorListElement::expression_type>,
               typename Accept = always_false<typename EnumeratorListElement::expression_type>
@@ -963,7 +964,7 @@ class enumerator_algorithm
     /// \param accept Elements p for which accept(p) is true are reported as a solution, even if the list of variables of the enumerator element is non-empty.
     /// \return The number of elements that have been processed
     template <typename EnumeratorListElement,
-              typename MutableSubstitution,
+              IsSubstitution MutableSubstitution,
               typename ReportSolution,
               typename Reject = always_false<typename EnumeratorListElement::expression_type>,
               typename Accept = always_false<typename EnumeratorListElement::expression_type>
@@ -993,7 +994,7 @@ class enumerator_algorithm
     /// \param accept Elements p for which accept(p) is true are reported as a solution, even if the list of variables of the enumerator element is non-empty.
     /// \return The number of elements that have been processed
     template <typename EnumeratorListElement,
-              typename MutableSubstitution,
+              IsSubstitution MutableSubstitution,
               typename ReportSolution,
               typename Reject = always_false<typename EnumeratorListElement::expression_type>,
               typename Accept = always_false<typename EnumeratorListElement::expression_type>

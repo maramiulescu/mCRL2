@@ -14,6 +14,8 @@
 #ifndef MCRL2_LPS_INVARIANT_CHECKER_H
 #define MCRL2_LPS_INVARIANT_CHECKER_H
 
+#include <limits>
+
 #include "mcrl2/data/detail/prover/bdd_prover.h"
 #include "mcrl2/data/detail/prover/bdd2dot.h"
 #include "mcrl2/lps/stochastic_specification.h"
@@ -129,7 +131,7 @@ void Invariant_Checker<Specification>::save_dot_file(std::size_t a_summand_numbe
   {
     std::string v_file_name=f_dot_file_name;
 
-    if (a_summand_number == (std::size_t)-1) // Dangerous
+    if (a_summand_number == std::numeric_limits<std::size_t>::max()) // Sentinel for the initial state.
     {
       v_file_name += "-init.dot";
     }
@@ -167,7 +169,7 @@ bool Invariant_Checker<Specification>::check_init(const data::data_expression& a
     if (f_bdd_prover.is_contradiction() != data::detail::answer_yes)
     {
       print_counter_example();
-      save_dot_file((std::size_t)(-1));
+      save_dot_file(std::numeric_limits<std::size_t>::max());
     }
     return false;
   }

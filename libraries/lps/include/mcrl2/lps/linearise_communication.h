@@ -81,6 +81,7 @@ struct tuple_list
 /// and make it explicit that L should not be used by the caller afterwards.
 /// If firstaction == action(), it is not added to the multiactions in L', but the conditions will be strengthened.
 /// \pre condition != sort_bool::false_()
+// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved) L is consumed: its actions are moved into S via move-iterators (see note above).
 inline void addActionCondition(const process::action& a, const data::data_expression& c, tuple_list&& L, tuple_list& S)
 {
   assert(c != data::sort_bool::false_()); // It makes no sense to add an action with condition false, as it cannot
@@ -371,6 +372,7 @@ public:
         m_data_rewriter(data_rewriter),
         m_communications(sort_communications(communications)),
         m_allowlist(sort_multi_action_labels(allowlist)),
+        m_allow_cache(is_allow ? detail::make_allow_list_cache(allowlist) : detail::allow_list_cache()),
         m_blocked_actions(is_block ? get_actions(allowlist) : std::vector<core::identifier_string>()),
         m_allowed_actions(init_allowed_actions(is_allow, allowlist, termination_action)),
         m_comm_table(m_communications),
@@ -512,7 +514,7 @@ public:
       {
         const process::action_list& multiaction = multiactionconditionlist.actions[i];
 
-        if (m_is_allow && !allow_(m_allowlist, multiaction, m_terminationAction))
+        if (m_is_allow && !allow_(m_allow_cache, multiaction, m_terminationAction))
         {
           if constexpr (EnableLineariseStatistics) {
             ++disallowed_summands;
@@ -590,6 +592,7 @@ protected:
   DataRewriter& m_data_rewriter;
   const process::communication_expression_list m_communications;
   const process::action_name_multiset_list m_allowlist;         // This is a list of list of identifierstring.
+  const detail::allow_list_cache m_allow_cache; // This is a cache for allowlist, used to speed up lookups in allowlist. It contains the same information as allowlist, but in a different format that allows for faster lookups.
   const std::vector<core::identifier_string> m_blocked_actions; // used only if m_is_block is set
   const std::vector<core::identifier_string> m_allowed_actions; // used only if m_is_allow is set
   comm_entry m_comm_table;

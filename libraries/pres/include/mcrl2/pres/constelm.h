@@ -10,6 +10,8 @@
 #ifndef MCRL2_PRES_CONSTELM_H
 #define MCRL2_PRES_CONSTELM_H
 
+#include <ranges>
+
 #include "mcrl2/pres/pres_expression.h"
 #include "mcrl2/pres/algorithms.h"
 #include "mcrl2/pres/pres_rewriter_type.h"
@@ -119,10 +121,8 @@ struct edge_traverser_stack_elem
   edge_map edges;
 
   edge_traverser_stack_elem(const data::data_expression& cond_pos, const data::data_expression& cond_neg, std::set<data::variable>&& free_vars)
-    : Cpos(cond_pos), Cneg(cond_neg)
-  {
-    std::swap(FV, free_vars);
-  }
+    : Cpos(cond_pos), Cneg(cond_neg), FV(std::move(free_vars))
+  {}
 };
 
 struct edge_condition_traverser: public pres_expression_traverser<edge_condition_traverser>
@@ -504,14 +504,14 @@ class pres_constelm_algorithm
         qvar_list quantifier_inside_approximation(const qvar_list& Q) const
         {
           qvar_list result;
-          for (auto it = Q.crbegin(); it != Q.crend(); ++it)
+          for (const auto& it: std::ranges::reverse_view(Q))
           {
             // Variable of a universal quantifier cannot occur in the disjunctive context
             // Variable of an existential quantifier cannot occur in the conjunctive context
-            if (( it->is_infimum() && m_disj_context.find(it->variable()) == m_disj_context.end()) ||
-                (!it->is_infimum() && m_conj_context.find(it->variable()) == m_conj_context.end()))
+            if ((it.is_infimum() && m_disj_context.find(it.variable()) == m_disj_context.end())
+                || (!it.is_infimum() && m_conj_context.find(it.variable()) == m_conj_context.end()))
             {
-              result.push_front(*it);
+              result.push_front(it);
             }
             else
             {
@@ -1031,8 +1031,10 @@ void constelm(pres& p,
     case quantifier_all:
     case quantifier_finite:
     {
-      bool enumerate_infinite_sorts = (rewriter_type == quantifier_all);
-      enumerate_quantifiers_rewriter presr(datar, p.data(), enumerate_infinite_sorts);
+      const pbes_system::enumerate_quantifiers_mode enum_mode = (rewriter_type == pres_rewriter_type::quantifier_all?
+                                                                 pbes_system::expand_infinite_sorts_and_use_data_rewriter:
+                                                                 pbes_system::expand_finite_sorts);
+      enumerate_quantifiers_rewriter presr(datar, p.data(), enum_mode);
       pres_constelm_algorithm<data::rewriter, enumerate_quantifiers_rewriter> algorithm(datar, presr);
       algorithm.run(p, compute_conditions, check_quantifiers);
       if (remove_redundant_equations)

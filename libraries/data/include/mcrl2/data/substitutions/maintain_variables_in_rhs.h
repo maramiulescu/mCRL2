@@ -29,14 +29,14 @@ namespace mcrl2::data
 ///          Provided that, given a variable, its index can be computed in O(1)
 ///          time, insertion is O(1) amortized, and lookup is O(1).
 ///          Memory required is O(n) where n is the largest index used.
-template <typename Substitution>
+template <IsSubstitution Substitution>
 class maintain_variables_in_rhs: public Substitution
 {
   public:
     using super = Substitution;
     using variable_type = typename super::variable_type;
     using expression_type = typename super::expression_type;
-    using super::is_trivial;
+    using super::is_identity_substitution;
 
   protected:
     std::multiset<variable_type> m_variables_in_rhs;
@@ -72,7 +72,7 @@ class maintain_variables_in_rhs: public Substitution
         { }
   
         /// \brief Actual assignment
-        void operator=(const expression_type& e)
+        assignment& operator=(const expression_type& e)
         {
           assert(e.defined());
 
@@ -95,7 +95,8 @@ class maintain_variables_in_rhs: public Substitution
             m_scratch_set.clear();
           }
           // Set the new variable;
-          m_sigma.operator[](m_variable)=e; 
+          m_sigma.operator[](m_variable)=e;
+          return *this;
         }
     };
   

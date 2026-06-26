@@ -8,8 +8,8 @@
 //
 /// \file bespp.cpp
 
-#define NAME "bespp"
-#define AUTHOR "Jeroen Keiren"
+constexpr const char* NAME = "bespp";
+constexpr const char* AUTHOR = "Jeroen Keiren";
 
 #include "mcrl2/utilities/input_output_tool.h"
 #include "mcrl2/pbes/pbes_input_tool.h"
@@ -49,7 +49,7 @@ class bespp_tool: public pbes_input_tool<input_output_tool>
 
     void add_options(interface_description& desc) override
     {
-      input_output_tool::add_options(desc);
+      super::add_options(desc);
       desc.add_option("format", make_enum_argument<print_format_type>("FORMAT")
                       .add_value_desc(print_default, "for a BES specification", true),
                       "print the PBES in the specified FORMAT:", 'f');

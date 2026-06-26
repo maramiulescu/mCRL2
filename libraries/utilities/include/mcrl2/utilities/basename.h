@@ -14,8 +14,10 @@
 
 #include "mcrl2/utilities/platform.h"
 
+#include <array>
 #include <cstdio>
 #include <string>
+#include <vector>
 #include "mcrl2/utilities/exception.h"
 
 #ifdef MCRL2_PLATFORM_LINUX
@@ -40,34 +42,27 @@ namespace mcrl2::utilities
       std::string path;
 #ifdef MCRL2_PLATFORM_LINUX
       path = "";
-      pid_t pid = getpid();
-      char buf[10];
-      sprintf(buf,"%d",pid);
-      std::string _link = "/proc/";
-      _link.append(buf);
-      _link.append("/exe");
-      char proc[512];
-      int ch = readlink(_link.c_str(),proc,512);
+      std::string _link = "/proc/" + std::to_string(getpid()) + "/exe";
+      std::array<char, 512> proc;
+      ssize_t ch = readlink(_link.c_str(), proc.data(), proc.size());
       if (ch != -1)
       {
         proc[ch] = 0;
-        path = proc;
+        path = proc.data();
         std::string::size_type t = path.find_last_of('/');
         path = path.substr(0,t);
       }
 #endif // MCRL2_PLATFORM_LINUX
 
 #ifdef MCRL2_PLATFORM_MAC
-      char* pathbuf = NULL;
       uint32_t bufsize = 0;
-      _NSGetExecutablePath(pathbuf, &bufsize);
-      pathbuf = new char[bufsize];
-      if (_NSGetExecutablePath(pathbuf, &bufsize) != 0)
+      _NSGetExecutablePath(nullptr, &bufsize);
+      std::vector<char> pathbuf(bufsize);
+      if (_NSGetExecutablePath(pathbuf.data(), &bufsize) != 0)
       {
         throw mcrl2::runtime_error("Could not retrieve path to main executable (_NSGetExecutablePath returned nonzero).");
       }
-      path = pathbuf;
-      delete[] pathbuf;
+      path = pathbuf.data();
       std::string::size_type t = path.find_last_of("/");
       path = path.substr(0,t);
 #endif //MCRL2_PLATFORM_MAC

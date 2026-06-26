@@ -51,6 +51,8 @@ class transform_tool: public Tool
       commands[command->name] = command;
     }
 
+    // This pure virtual function is only instantiated by compilers when used; this is intended.
+    // NOLINTNEXTLINE(portability-template-virtual-member-function)
     virtual void add_commands(const std::vector<std::string>& options) = 0;
 
   public:
@@ -81,9 +83,9 @@ class transform_tool: public Tool
 
       add_commands(options);
 
-      for (auto i = commands.begin(); i != commands.end(); ++i)
+      for (auto& command: commands)
       {
-        algorithms.insert(i->first);
+        algorithms.insert(command.first);
       }
 
       if (algorithm_number >= 0 && !algorithm_and_options.empty())

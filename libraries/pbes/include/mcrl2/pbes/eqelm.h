@@ -71,10 +71,10 @@ class pbes_eqelm_algorithm
     std::string print_vertices() const
     {
       std::ostringstream out;
-      for (auto i = m_vertices.begin(); i != m_vertices.end(); ++i)
+      for (const auto& vertex: m_vertices)
       {
-        out << i->first << " -> [ ";
-        const std::vector<equivalence_class>& v = i->second;
+        out << vertex.first << " -> [ ";
+        const std::vector<equivalence_class>& v = vertex.second;
         for (auto j = v.begin(); j != v.end(); ++j)
         {
           if (j != v.begin())
@@ -92,9 +92,9 @@ class pbes_eqelm_algorithm
     std::string print_edges() const
     {
       std::ostringstream out;
-      for (auto i = m_edges.begin(); i != m_edges.end(); ++i)
+      for (const auto& edge: m_edges)
       {
-        out << i->first << " -> " << core::detail::print_set(i->second) << std::endl;
+        out << edge.first << " -> " << core::detail::print_set(edge.second) << std::endl;
       }
       return out.str();
     }
@@ -103,12 +103,12 @@ class pbes_eqelm_algorithm
     std::string print_equivalence_classes() const
     {
       std::ostringstream out;
-      for (auto i = m_vertices.begin(); i != m_vertices.end(); ++i)
+      for (const auto& vertex: m_vertices)
       {
-        out << "  vertex " << i->first << ": ";
-        for (auto j = i->second.begin(); j != i->second.end(); ++j)
+        out << "  vertex " << vertex.first << ": ";
+        for (const auto& j: vertex.second)
         {
-          out << core::detail::print_set(*j) << " ";
+          out << core::detail::print_set(j) << " ";
         }
         out << std::endl;
       }
@@ -338,8 +338,10 @@ void eqelm(pbes& p,
     case pbes_rewriter_type::quantifier_all:
     case pbes_rewriter_type::quantifier_finite:
     {
-      bool enumerate_infinite_sorts = (rewriter_type == pbes_rewriter_type::quantifier_all);
-      enumerate_quantifiers_rewriter pbesr(datar, p.data(), enumerate_infinite_sorts);
+      const enumerate_quantifiers_mode enum_mode = (rewriter_type == pbes_rewriter_type::quantifier_all?
+                                                         expand_infinite_sorts_and_use_data_rewriter:
+                                                         expand_finite_sorts);
+      enumerate_quantifiers_rewriter pbesr(datar, p.data(), enum_mode);
       pbes_eqelm_algorithm<pbes_expression, data::rewriter, enumerate_quantifiers_rewriter> algorithm(datar, pbesr);
       algorithm.run(p, ignore_initial_state);
       break;

@@ -15,9 +15,8 @@
 #include "mcrl2/data/rewrite.h"
 #include "mcrl2/process/builder.h"
 
-namespace mcrl2 {
-
-namespace process {
+namespace mcrl2::process
+{
 
 //--- start generated process rewrite code ---//
 /// \\brief Rewrites all embedded expressions in an object x
@@ -51,7 +50,7 @@ T rewrite(const T& x,
 /// \\param x an object containing expressions
 /// \\param R a rewriter
 /// \\param sigma a substitution
-template <typename T, typename Rewriter, typename Substitution>
+template <typename T, typename Rewriter, data::IsSubstitution Substitution>
 void rewrite(T& x,
              Rewriter R,
              const Substitution& sigma
@@ -66,7 +65,7 @@ void rewrite(T& x,
 /// \\param R a rewriter
 /// \\param sigma a substitution
 /// \\return the rewrite result
-template <typename T, typename Rewriter, typename Substitution>
+template <typename T, typename Rewriter, data::IsSubstitution Substitution>
 T rewrite(const T& x,
           Rewriter R,
           const Substitution& sigma
@@ -79,8 +78,6 @@ T rewrite(const T& x,
 }
 //--- end generated process rewrite code ---//
 
-} // namespace process
-
-} // namespace mcrl2
+} // namespace mcrl2::process
 
 #endif // PROCESS_INCLUDE_MCRL2_PROCESS_REWRITE_H

@@ -178,7 +178,7 @@ std::vector<std::size_t> compute_variable_order_random(std::size_t n, bool exclu
   std::random_device rd;
   std::mt19937 g(rd());
   std::size_t first = exclude_first_variable ? 1 : 0;
-  std::shuffle(result.begin() + first, result.end(), g);
+  std::shuffle(result.begin() + static_cast<std::ptrdiff_t>(first), result.end(), g);
   return result;
 }
 
@@ -433,32 +433,7 @@ std::string print_read_write_patterns(const std::vector<boost::dynamic_bitset<>>
 
   std::size_t n = patterns.front().size() / 2;
 
-  /* auto print_used = [n](const boost::dynamic_bitset<>& pattern)
-  {
-    std::ostringstream out;
-    for (std::size_t i = 0; i < n; i++)
-    {
-      bool read = pattern[2*i];
-      bool write = pattern[2*i+1];
-      bool used = read || write;
-      out << (used ? "1" : "0");
-    }
-    return out.str();
-  }; */
-
   // N.B. The stream operator of boost::dynamic_bitset prints the bits in reverse order(!)
-  /* auto print_rw = [n](const boost::dynamic_bitset<>& pattern)
-  {
-    std::ostringstream out;
-    for (std::size_t i = 0; i < n; i++)
-    {
-      bool read = pattern[2*i];
-      bool write = pattern[2*i+1];
-      out << (read ? "1" : "0");
-      out << (write ? "1" : "0");
-    }
-    return out.str();
-  }; */ 
 
   auto print_compact = [n](const boost::dynamic_bitset<>& pattern)
   {

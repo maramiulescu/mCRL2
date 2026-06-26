@@ -376,7 +376,6 @@ bool reachability_check(lts < SL, AL, BASE>& l, bool remove_unreachable = false)
   {
     std::size_t state_to_consider=todo.top();
     todo.pop();
-    // for (const outgoing_pair_t& p: out_trans[state_to_consider])
     for (detail::state_type i=out_trans.lowerbound(state_to_consider); i<out_trans.upperbound(state_to_consider); ++i)
     {
       const outgoing_pair_t& p=out_trans.get_transitions()[i];
@@ -497,7 +496,6 @@ bool reachability_check(probabilistic_lts < SL, AL, PROBABILISTIC_STATE, BASE>& 
   {
     std::size_t state_to_consider=todo.top();
     todo.pop();
-    // for (const outgoing_pair_t& p: out_trans[state_to_consider])
     for (detail::state_type i=out_trans.lowerbound(state_to_consider); i<out_trans.upperbound(state_to_consider); ++i)
     {
       const outgoing_pair_t& p=out_trans.get_transitions()[i];
@@ -790,24 +788,6 @@ void reduce(LTS_TYPE& l,lts_equivalence eq)
       detail::weak_bisimulation_reduce(l,true);
       return;
     }
-    /*
-    case lts_eq_divergence_preserving_weak_bisim_sigref:
-    {
-      {
-       sigref<LTS_TYPE, signature_divergence_preserving_branching_bisim<LTS_TYPE> > s1(l);
-       s1.run();
-      }
-       std::size_t divergence_label=detail::mark_explicit_divergence_transitions(l);
-       detail::reflexive_transitive_tau_closure(l);
-      {
-       sigref<LTS_TYPE, signature_bisim<LTS_TYPE> > s2(l);
-       s2.run();
-      }
-      scc_reduce(l); // Remove tau loops
-      detail::unmark_explicit_divergence_transitions(l,divergence_label);
-      return;
-    }
-    */
     case lts_eq_sim:
     {
       // Run the partitioning algorithm on this LTS
@@ -825,9 +805,9 @@ void reduce(LTS_TYPE& l,lts_equivalence eq)
 
       const std::vector <transition> trans=sp.get_transitions();
       l.clear_transitions();
-      for (std::vector <transition>::const_iterator i=trans.begin(); i!=trans.end(); ++i)
+      for (const transition& t: trans)
       {
-        l.add_transition(*i);
+        l.add_transition(t);
       }
       // Remove unreachable parts
 
@@ -852,9 +832,9 @@ void reduce(LTS_TYPE& l,lts_equivalence eq)
 
       const std::vector <transition> trans=rsp.get_transitions();
       l.clear_transitions();
-      for (std::vector <transition>::const_iterator i=trans.begin(); i!=trans.end(); ++i)
+      for (const transition& t: trans)
       {
-        l.add_transition(*i);
+        l.add_transition(t);
       }
       // Remove unreachable parts
 
@@ -1100,7 +1080,7 @@ namespace detail
 template <class LTS_TYPE>
 void get_trans(const outgoing_transitions_per_state_t& begin,
                tree_set_store& tss,
-               std::size_t d,
+               std::ptrdiff_t d,
                std::vector<transition>& d_trans,
                LTS_TYPE& aut)
 {
@@ -1108,10 +1088,7 @@ void get_trans(const outgoing_transitions_per_state_t& begin,
   {
     if (tss.is_set_empty(tss.get_set_child_right(d)))
     {
-      // for (outgoing_transitions_per_state_t:: const_iterator
-      //     j=begin.lower_bound(tss.get_set_child_left(d)); j!=begin.upper_bound(tss.get_set_child_left(d)); ++j)
       const state_type from=tss.get_set_child_left(d);
-      // for(const outgoing_pair_t& p: begin[from])
       for (detail::state_type i=begin.lowerbound(from); i<begin.upperbound(from); ++i)
       {
         const outgoing_pair_t& p=begin.get_transitions()[i];
@@ -1148,7 +1125,7 @@ void determinise(LTS_TYPE& l)
   std::size_t d_ntransitions = 0;
   std::vector < transition > d_transitions;
 
-  std::size_t s;
+  std::ptrdiff_t s;
   std::size_t i;
   std::size_t to;
   std::size_t lbl;
@@ -1176,7 +1153,7 @@ void determinise(LTS_TYPE& l)
       while (i < n_t && l.apply_hidden_label_map(d_transs[i].label()) == lbl)
       {
         to = d_transs[i].to();
-        d_states.push_back(to);
+        d_states.push_back(static_cast<std::ptrdiff_t>(to));
         while (i < n_t && l.apply_hidden_label_map(d_transs[i].label()) == lbl &&
                d_transs[i].to() == to)
         {

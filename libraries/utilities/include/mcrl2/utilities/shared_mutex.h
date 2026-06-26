@@ -10,16 +10,16 @@
 #ifndef MCRL2_UTILITIES_DETAIL_SHARED_MUTEX_H
 #define MCRL2_UTILITIES_DETAIL_SHARED_MUTEX_H
 
-#include <assert.h>
 #include <algorithm>
 #include <atomic>
+#include <cassert>
 #include <memory>
 #include <mutex>
 #include <vector>
 
 #include "mcrl2/utilities/noncopyable.h"
 #include "mcrl2/utilities/configuration.h"
-
+#include "mcrl2/utilities/hardware_interference_size.h"
 
 namespace mcrl2::utilities
 {
@@ -114,7 +114,7 @@ struct shared_mutex_data
 
 /// An implementation of a shared mutex (also called readers-write lock in the literature) based on
 /// the notion of busy and forbidden flags.
-class shared_mutex
+class alignas(hardware_destructive_interference_size) shared_mutex
 {
 public:
   shared_mutex()
@@ -198,7 +198,8 @@ public:
   }
 
   inline
-  void lock_impl() {    
+  void lock_impl() 
+  {    
     if constexpr (mcrl2::utilities::detail::GlobalThreadSafe)
     {
       // Shared and exclusive sections MUST be disjoint.

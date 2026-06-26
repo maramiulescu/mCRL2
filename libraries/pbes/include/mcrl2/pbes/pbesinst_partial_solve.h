@@ -49,21 +49,8 @@ void partial_solve(structure_graph& G,
 
   // Si_todo := Si U todo
   std::array<vertex_set, 2> S_todo = S;
-  /* for (const propositional_variable_instantiation& X: todo.all_elements()) all_elements does not seem to work. Therefore split into the two cases below. 
-  {
-    structure_graph::index_type u = graph_builder.find_vertex(X);
-    S_todo[0].insert(u);
-    S_todo[1].insert(u);
-  } */
 
   for (const propositional_variable_instantiation& X: todo.elements())
-  {
-    structure_graph::index_type u = graph_builder.find_vertex(X);
-    S_todo[0].insert(u);
-    S_todo[1].insert(u);
-  }
-
-  for (const propositional_variable_instantiation& X: todo.irrelevant_elements())
   {
     structure_graph::index_type u = graph_builder.find_vertex(X);
     S_todo[0].insert(u);
@@ -74,7 +61,7 @@ void partial_solve(structure_graph& G,
   bool use_toms_optimization = false;
   solve_structure_graph_algorithm algorithm(check_strategy, use_toms_optimization);
 
-  vertex_set W[2] = { vertex_set(N), vertex_set(N) };
+  vertex_set W[2] = { vertex_set(N), vertex_set(N) }; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
   std::tie(W[0], W[1]) = algorithm.solve_recursive(G, set_union(S[1], attr_default_no_strategy(G, S_todo[0], 0)));
   for (structure_graph::index_type v: W[1].vertices())
   {

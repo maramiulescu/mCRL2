@@ -9,6 +9,7 @@
 /// \file pbes_explorer_test.cpp
 /// \brief Test for the PBES_Explorer interface.
 
+#define BOOST_TEST_MODULE pbes_explorer_test
 #include <boost/test/included/unit_test.hpp>
 #include "mcrl2/utilities/logger.h"
 
@@ -72,7 +73,6 @@ public:
         // testing serialisation/deserialisation
         int type_no = this->get_info()->get_lts_type().get_state_type_no(i);
         std::string s = this->get_value(type_no, data[i]);
-        //std::clog << "Testing (de)serialisation of expression: " << s << std::endl;
         int index = this->get_index(type_no, s);
         BOOST_CHECK(index==data[i]);
 
@@ -83,7 +83,7 @@ public:
 
     void from_int_vector(int size, std::vector<int> data, int* dst)
     {
-      BOOST_CHECK(size==(int)data.size());
+      BOOST_CHECK(std::cmp_equal(size,data.size()));
       auto it = data.begin();
       for(int i=0; i < size; i++, it++)
       {
@@ -177,7 +177,6 @@ void explorer::bfs()
         std::vector<std::vector<int> > successors = f.get_successors();
 
         std::set<std::vector<int> > succ_set;
-        //std::clog << successors.size() << " successors" << std::endl;
         transition_count += successors.size();
         for(const std::vector<int>& s: successors)
         {
@@ -229,10 +228,6 @@ void run_pbes_explorer(const std::string& pbes_text,
   lts_info* info = pbes_explorer->get_info();
   int state_length = info->get_lts_type().get_state_length();
   BOOST_CHECK(num_parts==state_length);
-  //std::clog << state_length << " parts" << std::endl;
-  //int num_rows = info->get_number_of_groups();
-  //std::clog << num_rows << " groups" << std::endl;
-  //BOOST_CHECK(num_groups==num_rows);
   std::map<int,std::vector<bool> > matrix = info->get_dependency_matrix();
   std::map<int,std::vector<bool> > read_matrix = info->get_read_matrix();
   std::map<int,std::vector<bool> > write_matrix = info->get_write_matrix();
@@ -261,10 +256,6 @@ void run_pbes_explorer_file(const std::string& filename,
   lts_info* info = pbes_explorer->get_info();
   int state_length = info->get_lts_type().get_state_length();
   BOOST_CHECK(num_parts==state_length);
-  //std::clog << state_length << " parts" << std::endl;
-  //int num_rows = info->get_number_of_groups();
-  //std::clog << num_rows << " groups" << std::endl;
-  //BOOST_CHECK(num_groups==num_rows);
   std::map<int,std::vector<bool> > matrix = info->get_dependency_matrix();
   std::map<int,std::vector<bool> > read_matrix = info->get_read_matrix();
   std::map<int,std::vector<bool> > write_matrix = info->get_write_matrix();
@@ -343,9 +334,12 @@ BOOST_AUTO_TEST_CASE(skip_test)
 
 #endif // ndef MCRL2_SKIP_LONG_TESTS
 
-boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[])
+struct logging_fixture
 {
-  (void) argc;  (void) argv;  //< avoid warning about unused parameters
-  mcrl2::log::logger::set_reporting_level(mcrl2::log::debug);
-  return nullptr;
-}
+  logging_fixture()
+  {
+    mcrl2::log::logger::set_reporting_level(mcrl2::log::debug);
+  }
+};
+
+BOOST_GLOBAL_FIXTURE(logging_fixture);

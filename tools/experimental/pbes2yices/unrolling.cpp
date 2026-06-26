@@ -201,11 +201,11 @@ bool parse_pbes(const pbes &pbes, bool disjunctive, parsed_pbes &output)
 	constant_equation.variable = propositional_variable(constant_variable_name, variable_list());
 	constant_equation.clauses.push_back(constant_clause);
 	
-	for (std::vector<pbes_equation>::const_iterator i = pbes.equations().begin(); i != pbes.equations().end(); ++i) {
+	for (const auto & i : pbes.equations()) {
 		equation e;
-		e.symbol = i->symbol();
-		e.variable = i->variable();
-		if (!parse_clauses(i->formula(), disjunctive, constant_clause.instantiation, variable_vector(), disjunctive ? sort_bool::true_() : sort_bool::false_(), false, e.clauses)) {
+		e.symbol = i.symbol();
+		e.variable = i.variable();
+		if (!parse_clauses(i.formula(), disjunctive, constant_clause.instantiation, variable_vector(), disjunctive ? sort_bool::true_() : sort_bool::false_(), false, e.clauses)) {
 			output.equations.clear();
 			return false;
 		}
@@ -215,36 +215,6 @@ bool parse_pbes(const pbes &pbes, bool disjunctive, parsed_pbes &output)
 	output.initial_state = pbes.initial_state();
 	output.disjunctive = disjunctive;
 	output.global_variables = pbes.global_variables();
-	
-/*	
-	std::cerr << "Parsed form:\n====================\n";
-	for (std::vector<equation>::iterator i = output.equations.begin(); i != output.equations.end(); ++i) {
-		std::cerr << pbes_system::pp(i->symbol) << " " << pbes_system::pp(i->variable) << " = \n";
-		for (std::vector<clause>::iterator j = i->clauses.begin(); j != i->clauses.end(); ++j) {
-			std::cerr << "    (";
-			if (!j->quantification_domain.empty()) {
-				std::cerr << "exists ";
-				for (variable_vector::iterator k = j->quantification_domain.begin(); k != j->quantification_domain.end(); ++k) {
-					std::cerr << data::pp(*k);
-					if (k != j->quantification_domain.end() - 1) {
-						std::cerr << ", ";
-					}
-				}
-				std::cerr << " . ";
-			}
-			std::cerr << data::pp(j->predicate);
-			std::cerr << (output.disjunctive ? " && " : " || ");
-			std::cerr << pbes_system::pp(j->instantiation);
-			std::cerr << ")";
-			if (j == i->clauses.end() - 1) {
-				std::cerr << ";";
-			} else {
-				std::cerr << (output.disjunctive ? " ||" : " &&");
-			}
-			std::cerr << "\n\n";
-		}
-	}
-*/	
 	return true;
 }
 
@@ -274,10 +244,10 @@ static void build_unrolling_variables(const parsed_pbes &pbes, const translated_
 	std::string parameter_base = "parameter";
 	std::string quantification_base = "quantification";
 	
-	for (std::set<data::variable>::const_iterator i = pbes.global_variables.begin(); i != pbes.global_variables.end(); ++i) {
-		std::string global_variable = global_variable_base + "-" + std::string(i->name());
-		variables.global_variables[*i] = global_variable;
-		variables.definition += "(define " + global_variable + "::" + translation.sort_names.at(i->sort()) + ")\n";
+	for (const auto & i : pbes.global_variables) {
+		std::string global_variable = global_variable_base + "-" + std::string(i.name());
+		variables.global_variables[i] = global_variable;
+		variables.definition += "(define " + global_variable + "::" + translation.sort_names.at(i.sort()) + ")\n";
 	}
 	
 	for (size_t i = 0; i < pbes.equations.size(); ++i) {
@@ -285,37 +255,37 @@ static void build_unrolling_variables(const parsed_pbes &pbes, const translated_
 	}
 	
 	for (size_t round = 0; round < rounds; ++round) {
-		std::string equation_number_variable = equation_number_base + "-" + itoa(round);
+		std::string equation_number_variable = equation_number_base + "-" + itoa(static_cast<int>(round));
 		variables.equation_number_variables.push_back(equation_number_variable);
 		variables.definition += "(define " + equation_number_variable + "::nat)\n";
 		
 		std::vector<std::vector<std::string> > round_parameter_variables;
 		std::vector<std::vector<std::vector<std::string> > > round_quantification_variables;
-		for (std::vector<equation>::const_iterator i = pbes.equations.begin(); i != pbes.equations.end(); ++i) {
+		for (const auto & i : pbes.equations) {
 			std::vector<std::string> equation_parameter_variables;
-			for (variable_list::const_iterator j = i->variable.parameters().begin(); j != i->variable.parameters().end(); ++j) {
+			for (variable_list::const_iterator j = i.variable.parameters().begin(); j != i.variable.parameters().end(); ++j) {
 				std::string parameter_variable =
 					parameter_base + "-" +
-					std::string(i->variable.name()) + "-" +
+					std::string(i.variable.name()) + "-" +
 					std::string(j->name()) + "-" +
-					itoa(round);
+					itoa(static_cast<int>(round));
 				equation_parameter_variables.push_back(parameter_variable);
 				variables.definition += "(define " + parameter_variable + "::" + translation.sort_names.at(j->sort()) + ")\n";
 			}
 			round_parameter_variables.push_back(equation_parameter_variables);
 			
 			std::vector<std::vector<std::string> > equation_quantification_variables;
-			for (std::vector<clause>::const_iterator j = i->clauses.begin(); j != i->clauses.end(); ++j) {
+			for (std::vector<clause>::const_iterator j = i.clauses.begin(); j != i.clauses.end(); ++j) {
 				std::vector<std::string> clause_quantification_variables;
-				for (variable_vector::const_iterator k = j->quantification_domain.begin(); k != j->quantification_domain.end(); ++k) {
+				for (const auto & k : j->quantification_domain) {
 					std::string quantification_variable =
 						quantification_base + "-" +
-						std::string(i->variable.name()) + "-" +
-						itoa(equation_quantification_variables.size()) + "-" +
-						std::string(k->name()) + "-" +
-						itoa(round);
+						std::string(i.variable.name()) + "-" +
+						itoa(static_cast<int>(equation_quantification_variables.size())) + "-" +
+						std::string(k.name()) + "-" +
+						itoa(static_cast<int>(round));
 					clause_quantification_variables.push_back(quantification_variable);
-					variables.definition += "(define " + quantification_variable + "::" + translation.sort_names.at(k->sort()) + ")\n";
+					variables.definition += "(define " + quantification_variable + "::" + translation.sort_names.at(k.sort()) + ")\n";
 				}
 				equation_quantification_variables.push_back(clause_quantification_variables);
 			}
@@ -330,7 +300,7 @@ static std::string assert_initial_state(const parsed_pbes &pbes, const translate
 {
 	std::string output;
 	size_t variable_index = variables.variable_indices.at(pbes.initial_state.name());
-	output += "(assert (= " + variables.equation_number_variables[0] + " " + itoa(variable_index) + "))\n";
+	output += "(assert (= " + variables.equation_number_variables[0] + " " + itoa(static_cast<int>(variable_index)) + "))\n";
 	
 	const std::vector<std::string> &equation_variables = variables.parameter_variables[0][variable_index];
 	data_expression_list values = pbes.initial_state.parameters();
@@ -351,8 +321,8 @@ static std::string join(const std::vector<std::string> &clauses, const std::stri
 		return clauses[0];
 	}
 	std::string output = "(" + op;
-	for (std::vector<std::string>::const_iterator i = clauses.begin(); i != clauses.end(); ++i) {
-		output += " " + *i;
+	for (const auto & clause : clauses) {
+		output += " " + clause;
 	}
 	output += ")";
 	return output;
@@ -361,24 +331,24 @@ static std::string join(const std::vector<std::string> &clauses, const std::stri
 static std::string assert_occurs(const parsed_pbes &pbes, const translated_data_specification &translation, const unrolling_variables &variables, size_t from_round, size_t to_round)
 {
 	std::vector<std::string> possibilities;
-	for (std::vector<equation>::const_iterator i = pbes.equations.begin(); i != pbes.equations.end(); ++i) {
-		size_t from_variable_index = variables.variable_indices.at(i->variable.name());
-		for (std::vector<clause>::const_iterator j = i->clauses.begin(); j != i->clauses.end(); ++j) {
+	for (const auto & i : pbes.equations) {
+		size_t from_variable_index = variables.variable_indices.at(i.variable.name());
+		for (std::vector<clause>::const_iterator j = i.clauses.begin(); j != i.clauses.end(); ++j) {
 			size_t to_variable_index = variables.variable_indices.at(j->instantiation.name());
 			std::vector<std::string> clauses;
 			
-			clauses.push_back("(= " + variables.equation_number_variables.at(from_round) + " " + itoa(from_variable_index) + ")");
-			clauses.push_back("(= " + variables.equation_number_variables.at(to_round) + " " + itoa(to_variable_index) + ")");
+			clauses.push_back("(= " + variables.equation_number_variables.at(from_round) + " " + itoa(static_cast<int>(from_variable_index)) + ")");
+			clauses.push_back("(= " + variables.equation_number_variables.at(to_round) + " " + itoa(static_cast<int>(to_variable_index)) + ")");
 			
 			std::map<mcrl2::data::variable, std::string> bound_variables = variables.global_variables;
 			size_t index = 0;
-			for (const mcrl2::data::variable& k: i->variable.parameters())
+			for (const mcrl2::data::variable& k: i.variable.parameters())
 			{
 				bound_variables[k] = variables.parameter_variables[from_round][from_variable_index][index++];
 			}
 
 			for (variable_vector::const_iterator k = j->quantification_domain.begin(); k != j->quantification_domain.end(); ++k) {
-				bound_variables[*k] = variables.quantification_variables[from_round][from_variable_index][j - i->clauses.begin()][k - j->quantification_domain.begin()];
+				bound_variables[*k] = variables.quantification_variables[from_round][from_variable_index][j - i.clauses.begin()][k - j->quantification_domain.begin()];
 			}
 			
 			if (j->predicate != sort_bool::true_()) {
@@ -414,12 +384,12 @@ static std::string define_assert_witness(const parsed_pbes &pbes, const translat
 	output += "(define " + equation_variable + "::nat)\n";
 	
 	std::vector<std::vector<std::string> > parameter_variables;
-	for (std::vector<equation>::const_iterator i = pbes.equations.begin(); i != pbes.equations.end(); ++i) {
+	for (const auto & i : pbes.equations) {
 		std::vector<std::string> equation_parameter_variables;
-		for (variable_list::const_iterator j = i->variable.parameters().begin(); j != i->variable.parameters().end(); ++j) {
+		for (variable_list::const_iterator j = i.variable.parameters().begin(); j != i.variable.parameters().end(); ++j) {
 			std::string parameter_variable =
 				base + "-parameter-" +
-				std::string(i->variable.name()) + "-" +
+				std::string(i.variable.name()) + "-" +
 				std::string(j->name());
 			equation_parameter_variables.push_back(parameter_variable);
 			output += "(define " + parameter_variable + "::" + translation.sort_names.at(j->sort()) + ")\n";
@@ -432,7 +402,7 @@ static std::string define_assert_witness(const parsed_pbes &pbes, const translat
 	std::vector<std::string> valid_equation_options;
 	for (std::vector<equation>::const_iterator i = pbes.equations.begin(); i != pbes.equations.end(); ++i) {
 		if (pbes.disjunctive ? i->symbol.is_nu() : i->symbol.is_mu()) {
-			std::string option = "(= " + equation_variable + " " + itoa(variables.variable_indices.at(i->variable.name())) + ")";
+			std::string option = "(= " + equation_variable + " " + itoa(static_cast<int>(variables.variable_indices.at(i->variable.name()))) + ")";
 			valid_equation_options.push_back(option);
 		}
 	}
@@ -441,7 +411,7 @@ static std::string define_assert_witness(const parsed_pbes &pbes, const translat
 	std::vector<std::string> start_round_options;
 	std::vector<std::string> end_round_options;
 	for (size_t round = 0; round < levels; ++round) {
-		output += "(assert (=> (and (<= " + start_round_variable + " " + itoa(round) + ") (<= " + itoa(round) + " " + end_round_variable + ")) (<= " + equation_variable + " " + variables.equation_number_variables[round] + ")))\n";
+		output += "(assert (=> (and (<= " + start_round_variable + " " + itoa(static_cast<int>(round)) + ") (<= " + itoa(static_cast<int>(round)) + " " + end_round_variable + ")) (<= " + equation_variable + " " + variables.equation_number_variables[round] + ")))\n";
 		
 		std::vector<std::string> requirements;
 		requirements.push_back("(= " + equation_variable + " " + variables.equation_number_variables[round] + ")");
@@ -451,11 +421,11 @@ static std::string define_assert_witness(const parsed_pbes &pbes, const translat
 			}
 		}
 		
-		requirements.push_back("(= " + start_round_variable + " " + itoa(round) + ")");
+		requirements.push_back("(= " + start_round_variable + " " + itoa(static_cast<int>(round)) + ")");
 		start_round_options.push_back("\n  " + join(requirements, "and"));
 		
 		requirements.pop_back();
-		requirements.push_back("(= " + end_round_variable + " " + itoa(round) + ")");
+		requirements.push_back("(= " + end_round_variable + " " + itoa(static_cast<int>(round)) + ")");
 		end_round_options.push_back("\n  " + join(requirements, "and"));
 	}
 	
@@ -493,12 +463,12 @@ static std::string assert_distinct(const parsed_pbes &pbes, const translated_dat
 	output += "(define-type pbes-state (datatype";
 	for (size_t i = 0; i < pbes.equations.size(); ++i) {
 		if (pbes.equations[i].variable.parameters().size() == 0) {
-			output += " pbes-state-" + itoa(i);
+			output += " pbes-state-" + itoa(static_cast<int>(i));
 		} else {
-			output += " (pbes-state-" + itoa(i);
+			output += " (pbes-state-" + itoa(static_cast<int>(i));
 			size_t index = 0;
 			for (data::variable_list::const_iterator j = pbes.equations[i].variable.parameters().begin(); j != pbes.equations[i].variable.parameters().end(); ++j) {
-				output += " pbes-state-var-" + itoa(i) + "-" + itoa(index) + "::" + translation.sort_names.at(j->sort());
+				output += " pbes-state-var-" + itoa(static_cast<int>(i)) + "-" + itoa(static_cast<int>(index)) + "::" + translation.sort_names.at(j->sort());
 				index++;
 			}
 			output += ")";
@@ -518,7 +488,7 @@ static std::string assert_distinct(const parsed_pbes &pbes, const translated_dat
 	for (size_t i = 0; i < pbes.equations.size(); ++i) {
 		size_t index = 0;
 		for (data::variable_list::const_iterator j = pbes.equations[i].variable.parameters().begin(); j != pbes.equations[i].variable.parameters().end(); ++j) {
-			output += " var-" + itoa(i) + "-" + itoa(index) + "::" + translation.sort_names.at(j->sort());
+			output += " var-" + itoa(static_cast<int>(i)) + "-" + itoa(static_cast<int>(index)) + "::" + translation.sort_names.at(j->sort());
 			index++;
 		}
 	}
@@ -526,11 +496,11 @@ static std::string assert_distinct(const parsed_pbes &pbes, const translated_dat
 	for (size_t i = 0; i < pbes.equations.size(); ++i) {
 		std::string term;
 		if (pbes.equations[i].variable.parameters().size() == 0) {
-			term = "pbes-state-" + itoa(i);
+			term = "pbes-state-" + itoa(static_cast<int>(i));
 		} else {
-			term = "(pbes-state-" + itoa(i);
+			term = "(pbes-state-" + itoa(static_cast<int>(i));
 			for (size_t j = 0; j < pbes.equations[i].variable.parameters().size(); ++j) {
-				term += " var-" + itoa(i) + "-" + itoa(j);
+				term += " var-" + itoa(static_cast<int>(i)) + "-" + itoa(static_cast<int>(j));
 			}
 			term += ")";
 		}
@@ -538,7 +508,7 @@ static std::string assert_distinct(const parsed_pbes &pbes, const translated_dat
 		if (i == pbes.equations.size() - 1) {
 			output += " " + term;
 		} else {
-			output += "(if (= equation " + itoa(i) + ") " + term;
+			output += "(if (= equation " + itoa(static_cast<int>(i)) + ") " + term;
 		}
 	}
 	for (size_t i = 0; i < pbes.equations.size() - 1; ++i) {
@@ -548,7 +518,7 @@ static std::string assert_distinct(const parsed_pbes &pbes, const translated_dat
 	
 	output += "(define pbes-state-number::(-> pbes-state nat))\n";
 	for (size_t i = 0; i < levels; ++i) {
-		output += "(assert (= " + itoa(i) + " (pbes-state-number (make-pbes-state " + unrolling.equation_number_variables[i];
+		output += "(assert (= " + itoa(static_cast<int>(i)) + " (pbes-state-number (make-pbes-state " + unrolling.equation_number_variables[i];
 		for (const std::vector<std::basic_string<char>>& j: unrolling.parameter_variables[i])
 		{
 			for (const std::basic_string<char>& k: j)

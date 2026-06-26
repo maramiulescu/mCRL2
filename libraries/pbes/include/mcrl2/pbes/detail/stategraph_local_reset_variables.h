@@ -15,10 +15,6 @@
 #include "mcrl2/pbes/detail/stategraph_local_algorithm.h"
 #include "mcrl2/pbes/detail/stategraph_reset_variables.h"
 
-
-
-
-
 namespace mcrl2::pbes_system::detail {
 
 template <typename Container>
@@ -125,12 +121,6 @@ class local_reset_variables_algorithm: public stategraph_local_algorithm
         p_eqn[k].formula() = local_reset_variables(*this, p_eqn[k].formula(), s_eqn[k]);
       }
 
-      // Commented out, since Tim thinks this should not have any effect
-      // if (m_simplify)
-      // {
-      //   pbes_system::simplify_data_rewriter<data::rewriter> pbesr(m_datar);
-      //   pbes_system::pbes_rewrite(p, pbesr);
-      // }
     }
 
     local_reset_variables_algorithm(const pbes& p, const pbesstategraph_options& options)
@@ -139,15 +129,10 @@ class local_reset_variables_algorithm: public stategraph_local_algorithm
         m_simplify(options.simplify)
     {}
 
-    /// \brief Runs the stategraph algorithm
-    /// \param simplify If true, simplify the resulting PBES
-    /// \param apply_to_original_pbes Apply resetting variables to the original PBES instead of the STATEGRAPH one
-    void run() override
+    void execute_postprocessing() override
     {
-      super::run();
       m_transformed_pbes = m_original_pbes;
       compute_occurring_data_parameters();
-
       start_timer("reset_variables_to_original");
       reset_variables_to_original(m_transformed_pbes);
       finish_timer("reset_variables_to_original");
@@ -271,7 +256,6 @@ inline data::data_expression_list local_reset_variables_algorithm::reset_variabl
 {
   using utilities::detail::contains;
 
-  // mCRL2log(log::debug) << "--- resetting variable Y(e) = " << x << " with index " << i << std::endl;
   assert(i < eq_X.predicate_variables().size());
   const predicate_variable& Ye = eq_X.predicate_variables()[i];
   assert(Ye.variable() == x);
@@ -367,11 +351,6 @@ inline data::data_expression_list local_reset_variables_algorithm::reset_variabl
   return data::data_expression_list(e1.begin(), e1.end());
 }
 
-
 } // namespace mcrl2::pbes_system::detail
-
-
-
-
 
 #endif // MCRL2_PBES_DETAIL_STATEGRAPH_LOCAL_RESET_VARIABLES_H

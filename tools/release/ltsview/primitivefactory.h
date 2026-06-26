@@ -32,7 +32,6 @@ class PrimitiveFactory: public QObject
     int makeObliqueCone(float a,float r,float s);
     int makeSphere();
     int makeTruncatedCone(float r,bool topClosed,bool bottomClosed);
-    //int  makeTube();
 
   private slots:
     void qualityChanged();
@@ -47,8 +46,8 @@ class PrimitiveFactory: public QObject
     int     simple_sphere;
     int     sphere;
     int     hemisphere;
-    float*   cos_theta;
-    float*   sin_theta;
+    std::vector<float>   cos_theta;
+    std::vector<float>   sin_theta;
 
     int  make_ring(float r);
     void make_disc();

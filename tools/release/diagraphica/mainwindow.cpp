@@ -18,12 +18,12 @@
 
 MainWindow::MainWindow():
   m_settingsDialog(new SettingsDialog(this, &m_settings)),
-  m_graph(0),
-  m_examiner(0),
-  m_arcDiagram(0),
-  m_simulator(0),
-  m_diagramEditor(0),
-  m_routingCluster(0),
+  m_graph(nullptr),
+  m_examiner(nullptr),
+  m_arcDiagram(nullptr),
+  m_simulator(nullptr),
+  m_diagramEditor(nullptr),
+  m_routingCluster(nullptr),
   m_fileDialog("", this)
 {
   m_ui.setupUi(this);
@@ -122,13 +122,13 @@ void MainWindow::open(QString filename)
       << m_arcDiagram
       << m_simulator;
 
-  for (int i = 0; i < oldWidgets.size(); ++i)
+  for (auto & oldWidget : oldWidgets)
   {
-    delete oldWidgets[i];
+    delete oldWidget;
   }
   oldWidgets.clear();
 
-  if (graph != 0)
+  if (graph != nullptr)
   {
     emit closingGraph();
     delete m_graph;
@@ -212,15 +212,15 @@ void MainWindow::updateAttributes()
   {
     for (int j = 0; j < m_ui.attributes->columnCount(); ++j)
     {
-      m_ui.attributes->setItem(i, j, new QTableWidgetItem());
-      m_ui.attributes->item(i, j)->setFlags(Qt::ItemIsSelectable | Qt::ItemIsDragEnabled | Qt::ItemIsEnabled);
+      m_ui.attributes->setItem(static_cast<int>(i), j, new QTableWidgetItem());
+      m_ui.attributes->item(static_cast<int>(i), j)->setFlags(Qt::ItemIsSelectable | Qt::ItemIsDragEnabled | Qt::ItemIsEnabled);
     }
 
     Attribute *attribute = m_graph->getAttribute(i);
-    m_ui.attributes->item(i, 0)->setText(QString::number(i));
-    m_ui.attributes->item(i, 1)->setText(attribute->name());
-    m_ui.attributes->item(i, 2)->setText(attribute->type());
-    m_ui.attributes->item(i, 3)->setText(QString::number(attribute->getSizeCurValues()));
+    m_ui.attributes->item(static_cast<int>(i), 0)->setText(QString::number(i));
+    m_ui.attributes->item(static_cast<int>(i), 1)->setText(attribute->name());
+    m_ui.attributes->item(static_cast<int>(i), 2)->setText(attribute->type());
+    m_ui.attributes->item(static_cast<int>(i), 3)->setText(QString::number(attribute->getSizeCurValues()));
   }
 
   m_ui.attributes->resizeColumnsToContents();
@@ -230,7 +230,7 @@ void MainWindow::updateAttributes()
 void MainWindow::updateAttributeOperations()
 {
   QList<int> attributes = selectedAttributes();
-  int items = attributes.size();
+  int items = static_cast<int>(attributes.size());
 
   m_ui.actionClusterNodes->setEnabled(items > 0);
   m_ui.actionDistributionPlot->setEnabled(items == 1);
@@ -248,7 +248,7 @@ void MainWindow::updateValues()
   QList<int> attributes = selectedAttributes();
   if (attributes.size() == 1)
   {
-    assert(attributes[0] < int(m_graph->getSizeAttributes()));
+    assert(std::cmp_less(attributes[0] ,m_graph->getSizeAttributes()));
 
     std::vector<std::size_t> valueDistribution;
     m_graph->calcAttrDistr(attributes[0], valueDistribution);
@@ -261,14 +261,14 @@ void MainWindow::updateValues()
 
       for (int j = 0; j < m_ui.attributes->columnCount(); ++j)
       {
-        m_ui.domain->setItem(i, j, new QTableWidgetItem());
-        m_ui.domain->item(i, j)->setFlags(Qt::ItemIsSelectable | Qt::ItemIsDragEnabled | Qt::ItemIsEnabled);
+        m_ui.domain->setItem(static_cast<int>(i), j, new QTableWidgetItem());
+        m_ui.domain->item(static_cast<int>(i), j)->setFlags(Qt::ItemIsSelectable | Qt::ItemIsDragEnabled | Qt::ItemIsEnabled);
       }
 
-      m_ui.domain->item(i, 0)->setText(QString::number(i));
-      m_ui.domain->item(i, 1)->setText(QString::fromStdString(value->getValue()));
-      m_ui.domain->item(i, 2)->setText(QString::number(valueDistribution[i]));
-      m_ui.domain->item(i, 3)->setText(QString::number(100 * valueDistribution[i] / (double)m_graph->getSizeNodes()));
+      m_ui.domain->item(static_cast<int>(i), 0)->setText(QString::number(i));
+      m_ui.domain->item(static_cast<int>(i), 1)->setText(QString::fromStdString(value->getValue()));
+      m_ui.domain->item(static_cast<int>(i), 2)->setText(QString::number(valueDistribution[i]));
+      m_ui.domain->item(static_cast<int>(i), 3)->setText(QString::number(100 * static_cast<double>(valueDistribution[i]) / (double)m_graph->getSizeNodes()));
     }
   }
   else
@@ -282,7 +282,7 @@ void MainWindow::updateValues()
 void MainWindow::updateValueOperations()
 {
   QList<int> values = selectedValues();
-  int items = values.size();
+  int items = static_cast<int>(values.size());
   m_ui.actionGroup->setEnabled(items > 1);
   m_ui.actionUngroup->setEnabled(items > 0);
   m_ui.actionRenameValue->setEnabled(items == 1);
@@ -466,9 +466,9 @@ void MainWindow::clusterNodes()
 {
   QList<int> attributes = selectedAttributes();
   std::vector<std::size_t> attributeVector;
-  for (int i = 0; i < attributes.size(); ++i)
+  for (int attribute : attributes)
   {
-    attributeVector.push_back(attributes[i]);
+    attributeVector.push_back(attribute);
   }
   m_graph->clustNodesOnAttr(attributeVector);
 }
@@ -481,7 +481,7 @@ void MainWindow::distributionPlot()
     return;
   }
 
-  DistrPlot *plot = new DistrPlot(0, m_graph, attributes[0]);
+  DistrPlot *plot = new DistrPlot(nullptr, m_graph, attributes[0]);
   connect(this, SIGNAL(closingGraph()), plot, SLOT(close()));
   plot->setAttribute(Qt::WA_DeleteOnClose);
   plot->setDiagram(m_diagramEditor->diagram());
@@ -496,7 +496,7 @@ void MainWindow::correlationPlot()
     return;
   }
 
-  CorrlPlot *plot = new CorrlPlot(0, m_graph, attributes[0], attributes[1]);
+  CorrlPlot *plot = new CorrlPlot(nullptr, m_graph, attributes[0], attributes[1]);
   connect(this, SIGNAL(closingGraph()), plot, SLOT(close()));
   plot->setAttribute(Qt::WA_DeleteOnClose);
   plot->setDiagram(m_diagramEditor->diagram());
@@ -511,12 +511,12 @@ void MainWindow::combinationPlot()
     return;
   }
   std::vector<std::size_t> attributeVector;
-  for (int i = 0; i < attributes.size(); ++i)
+  for (int attribute : attributes)
   {
-    attributeVector.push_back(attributes[i]);
+    attributeVector.push_back(attribute);
   }
 
-  CombnPlot *plot = new CombnPlot(0, m_graph, attributeVector);
+  CombnPlot *plot = new CombnPlot(nullptr, m_graph, attributeVector);
   connect(this, SIGNAL(closingGraph()), plot, SLOT(close()));
   plot->setAttribute(Qt::WA_DeleteOnClose);
   plot->setDiagram(m_diagramEditor->diagram());
@@ -612,7 +612,7 @@ void MainWindow::routeCluster(Cluster *cluster, QList<Cluster *> clusterSet, QLi
     delete m_routingCluster;
   }
 
-  m_routingCluster = (cluster == 0 ? 0 : new Cluster(*cluster));
+  m_routingCluster = (cluster == nullptr ? nullptr : new Cluster(*cluster));
   m_routingClusterSet = clusterSet;
   m_routingClusterAttributes = attributes;
 
@@ -623,13 +623,13 @@ void MainWindow::routeCluster(Cluster *cluster, QList<Cluster *> clusterSet, QLi
 
   QAction *toSimulator = menu->addAction("Send this to simulator");
   connect(toSimulator, SIGNAL(triggered()), this, SLOT(toSimulator()));
-  toSimulator->setEnabled(cluster != 0 && sender != m_simulator);
+  toSimulator->setEnabled(cluster != nullptr && sender != m_simulator);
 
   menu->addSeparator();
 
   QAction *toExaminer = menu->addAction("Send this to examiner");
   connect(toExaminer, SIGNAL(triggered()), this, SLOT(toExaminer()));
-  toExaminer->setEnabled(cluster != 0 && sender != m_examiner);
+  toExaminer->setEnabled(cluster != nullptr && sender != m_examiner);
 
   QAction *allToExaminer = menu->addAction("Send all to examiner");
   connect(allToExaminer, SIGNAL(triggered()), this, SLOT(allToExaminer()));
@@ -669,9 +669,9 @@ QList<int> MainWindow::selectedAttributes()
 {
   QMap<int, int> output;
   QList<QTableWidgetSelectionRange> ranges = m_ui.attributes->selectedRanges();
-  for (int i = 0; i < ranges.size(); ++i)
+  for (auto range : ranges)
   {
-    for (int j = ranges[i].topRow(); j <= ranges[i].bottomRow(); ++j)
+    for (int j = range.topRow(); j <= range.bottomRow(); ++j)
     {
       if (!output.contains(j))
       {
@@ -686,9 +686,9 @@ QList<int> MainWindow::selectedValues()
 {
   QMap<int, int> output;
   QList<QTableWidgetSelectionRange> ranges = m_ui.domain->selectedRanges();
-  for (int i = 0; i < ranges.size(); ++i)
+  for (auto range : ranges)
   {
-    for (int j = ranges[i].topRow(); j <= ranges[i].bottomRow(); ++j)
+    for (int j = range.topRow(); j <= range.bottomRow(); ++j)
     {
       if (!output.contains(j))
       {

@@ -64,7 +64,7 @@ latest gossip knowledge parameter of the process and the set constant
 action, they can synchronize yielding the action ``all_done``. The delta
 explicitly terminates the process.
 
-.. admonition:: Exercise
+.. exercise::
 
    Fill in the blanks in :download:`gossip-blanks.mcrl2
    <files/gossip-blanks.mcrl2>`. This means you will have to
@@ -73,7 +73,7 @@ explicitly terminates the process.
    * finish the definition of the equation for ``Gossips``, and
    * finish the communication definition.
    
-.. admonition:: Solution
+.. solution::
    :class: collapse
    
    ``Gossips`` is a constant of type ``Set(Pos)``, with equation
@@ -86,7 +86,7 @@ explicitly terminates the process.
    .. literalinclude:: files/gossip.mcrl2
       :language: mcrl2
 
-.. admonition:: Exercise
+.. exercise::
 
    Generate the state space for :download:`gossip.mcrl2 <files/gossip.mcrl2>`
    
@@ -98,7 +98,7 @@ explicitly terminates the process.
    to :ref:`tool-lps2lts` to use the compiling rewriter. This is more efficient
    than the default jitty rewriter.
    
-.. admonition:: Solution
+.. solution::
    :class: collapse
    
    We run the following commands::
@@ -133,11 +133,11 @@ explicitly terminates the process.
 
 Next we are going to investigate some properties of the gossiping girls.
 
-.. admonition:: Exercise
+.. exercise::
 
    Verify that the model is deadlock free.
    
-.. admonition:: Solution
+.. solution::
    :class: collapse
    
    There are several approaches to verifying absence of deadlock. We discuss
@@ -192,7 +192,7 @@ Next we are going to investigate some properties of the gossiping girls.
    is a path of ``7`` phone calss to the situation where all girls know all
    gossips.
    
-.. admonition:: Solution
+.. solution::
    :class: collapse
    
    Again we can pursue various different paths in this verification. We will
@@ -209,9 +209,12 @@ Next we are going to investigate some properties of the gossiping girls.
       an ``all_done`` action can be performed.
       
       However, if we try to verify this property using::
-      
+
         $ lps2pbes -f gossip3.mcf gossip.lps | pbessolve -rjittyc
-        
+        Warning: detected nested modal operators. This may result in a long execution time.
+        Use the option -m (for lps2pbes/lps2pres), -p (for lts2pbes/lts2pres) or insert dummy fix
+        point operators in between manually to speed up the transformation.
+
       It seems that :ref:`tool-lps2pbes` is getting stuck. This is caused by the
       translation of µ-calculus formula with an LPS to a PBES, that has to look
       ahead 8 levels in the state space, by recursively evaluating the guards in
@@ -281,12 +284,12 @@ Next we are going to investigate some properties of the gossiping girls.
       hand.
       
       
-.. admonition:: Exercise
+.. exercise::
 
    As a last exercise, check whether or not there is a path shorter than
    ``(N-1)+(N-2)`` leading to the situation where all girls know all gossips.
    
-.. admonition:: Solution
+.. solution::
    :class: collapse
    
    Again various approaches are possible here. We discuss two of them.

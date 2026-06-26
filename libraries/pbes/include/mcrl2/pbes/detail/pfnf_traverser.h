@@ -16,11 +16,6 @@
 #include "mcrl2/pbes/replace.h"
 #include <numeric>
 
-#ifdef MCRL2_PFNF_VISITOR_DEBUG
-#include "mcrl2/data/print.h"
-#endif
-
-
 
 
 
@@ -75,6 +70,8 @@ struct variable_data_expression_substitution
 {
   using variable_type = data::variable;
   using expression_type = data::data_expression;
+
+  static constexpr bool is_identity_substitution = false;
 
   const variable_variable_substitution& sigma;
 
@@ -186,13 +183,13 @@ struct pfnf_traverser: public pbes_expression_traverser<pfnf_traverser>
     std::set<data::variable> left_variables;
     std::set<data::variable> right_variables;
     std::set<data::variable> name_clashes;
-    for (std::vector<pfnf_traverser_quantifier>::const_iterator i = left.quantifiers.begin(); i != left.quantifiers.end(); ++i)
+    for (const auto& quantifier: left.quantifiers)
     {
-      left_variables.insert(i->second.begin(), i->second.end());
+      left_variables.insert(quantifier.second.begin(), quantifier.second.end());
     }
-    for (std::vector<pfnf_traverser_quantifier>::const_iterator j = right.quantifiers.begin(); j != right.quantifiers.end(); ++j)
+    for (const auto& quantifier: right.quantifiers)
     {
-      for (const data::variable& v: j->second)
+      for (const data::variable& v: quantifier.second)
       {
         right_variables.insert(v);
         if (left_variables.find(v) != left_variables.end())
@@ -202,9 +199,6 @@ struct pfnf_traverser: public pbes_expression_traverser<pfnf_traverser>
       }
     }
 
-#ifdef MCRL2_PFNF_VISITOR_DEBUG
-std::cout << "NAME CLASHES: " << core::detail::print_set(name_clashes) << std::endl;
-#endif
 
     if (!name_clashes.empty())
     {
@@ -222,15 +216,7 @@ std::cout << "NAME CLASHES: " << core::detail::print_set(name_clashes) << std::e
       {
         sigma.sigma[v] = data::variable(generator(std::string(v.name())), v.sort());
       }
-#ifdef MCRL2_PFNF_VISITOR_DEBUG
-std::cout << "LEFT\n"; print_expression(left);
-std::cout << "RIGHT BEFORE\n"; print_expression(right);
-std::cout << "SIGMA = " << sigma.to_string() << std::endl;
-#endif
       right.substitute(sigma);
-#ifdef MCRL2_PFNF_VISITOR_DEBUG
-std::cout << "RIGHT AFTER\n"; print_expression(right);
-#endif
     }
   }
 
@@ -274,7 +260,7 @@ std::cout << "RIGHT AFTER\n"; print_expression(right);
     {
       pbes_expression p;
       pbes_expression x = std::accumulate(impl.rhs.begin(), impl.rhs.end(), F, 
-                                          [&p](const pbes_expression& arg1, const pbes_expression& arg2) -> const pbes_expression
+                                          [&p](const pbes_expression& arg1, const pbes_expression& arg2) -> pbes_expression
                                               {
                                                 data::optimized_or(p, arg1, arg2);
                                                 return p;
@@ -363,7 +349,6 @@ std::cout << "RIGHT AFTER\n"; print_expression(right);
     std::vector<pfnf_traverser_quantifier> q = concat(left.quantifiers, right.quantifiers);
     pbes_expression h = make_and(left, right);
     std::vector<pfnf_traverser_implication> g = concat(left.implications, right.implications);
-//std::cout << "AND RESULT\n"; print_expression(pfnf_traverser_expression(h, q, g));
     expression_stack.emplace_back(h, q, g);
   }
 
@@ -410,7 +395,6 @@ std::cout << "RIGHT AFTER\n"; print_expression(right);
         g.emplace_back(make_and(i.g, k.g), concat(i.rhs, k.rhs));
       }
     }
-//std::cout << "OR RESULT\n"; print_expression(pfnf_traverser_expression(h, q, g));
     expression_stack.emplace_back(h, q, g);
   }
 

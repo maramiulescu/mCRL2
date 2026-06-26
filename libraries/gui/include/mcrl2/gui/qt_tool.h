@@ -6,8 +6,8 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef MCRL2_UTILITIES_QT_TOOL_H
-#define MCRL2_UTILITIES_QT_TOOL_H
+#ifndef MCRL2_GUI_QT_TOOL_H
+#define MCRL2_GUI_QT_TOOL_H
 
 #include <memory>
 #include <QAction>
@@ -99,18 +99,23 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
     QByteArray localMsg = msg.toLocal8Bit();
     switch (type) {
     case QtDebugMsg:
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg) Maurice: waiting for std::format to be supported.
         fprintf(stderr, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
         break;
     case QtInfoMsg:
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg) Maurice: waiting for std::format to be supported.
         fprintf(stderr, "Info: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
         break;
     case QtWarningMsg:
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg) Maurice: waiting for std::format to be supported.
         fprintf(stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
         break;
     case QtCriticalMsg:
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg) Maurice: waiting for std::format to be supported.
         fprintf(stderr, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
         break;
     case QtFatalMsg:
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg) Maurice: waiting for std::format to be supported.
         fprintf(stderr, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
         abort();
     }
@@ -159,7 +164,7 @@ class qt_tool: public Tool
       return Tool::execute(argc, argv);
     }
 
-    bool pre_run(int& argc, char** argv)
+    bool pre_run(int& argc, char** argv) override
     {
 #ifdef MCRL2_PLATFORM_WINDOWS
       // Disable the dark mode on Windows 11 until the icons have been adapted
@@ -173,14 +178,15 @@ class qt_tool: public Tool
       try
       {
         qInstallMessageHandler(myMessageOutput); // Install the handler
-        m_application = std::unique_ptr<QApplication>(new QApplication(argc, argv));
+        m_application = std::make_unique<QApplication>(argc, argv);
 #ifdef MCRL2_PLATFORM_WINDOWS
         m_application->setStyle("windowsvista");
 #endif // MCRL2_PLATFORM_WINDOWS
       }
       catch (...)
       {
-        mCRL2log(mcrl2::log::debug) << "Creating QApplication failed." << std::endl;
+        mCRL2log(mcrl2::log::error) << "Creating QApplication failed." << std::endl;
+        return false;
       }
       return true;
     }
@@ -194,9 +200,9 @@ class qt_tool: public Tool
       return m_application->exec() == 0;
     }
 
-    virtual ~qt_tool() {}
+    ~qt_tool() override = default;
 };
 
 } // namespace mcrl2::gui::qt
 
-#endif // MCRL2_UTILITIES_QT_TOOL_H
+#endif // MCRL2_GUI_QT_TOOL_H

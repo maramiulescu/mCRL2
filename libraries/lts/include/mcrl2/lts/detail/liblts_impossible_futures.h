@@ -177,8 +177,9 @@ std::pair<bool, trace> check_trace_inclusion(LTS_TYPE& l1,
 ///
 /// This counter examples that there is an implementation state (reached from the initial state by \sigma) whose
 /// language is not included in any of the specification states reachable by \sigma.
+template <typename LTS>
 inline void
-write_counter_example(std::ostream& stream, const trace& initial_trace, const std::vector<trace>& inner_traces)
+write_counter_example(const LTS& lts, std::ostream& stream, const trace& initial_trace, const std::vector<trace>& inner_traces)
 {
   if (!initial_trace.actions().empty())
   {
@@ -187,14 +188,52 @@ write_counter_example(std::ostream& stream, const trace& initial_trace, const st
     bool first_action = true;
     for (const auto& action : initial_trace.actions())
     {
+      // The trace interface is just completely messed up, and does not relate to the LTS hidden map at all.
+      bool skip = false;
+      std::size_t index = 0;
+      for (const auto& label: lts.action_labels())
+      {
+        if (mcrl2::lps::multi_action(mcrl2::process::action(
+                                mcrl2::process::action_label(
+                                       core::identifier_string(mcrl2::lts::pp(label)),
+                                       mcrl2::data::sort_expression_list()),
+                                mcrl2::data::data_expression_list())) == action)
+        {
+          if (lts.is_tau(lts.apply_hidden_label_map(index)))
+          {
+            skip = true;
+          }
+        }
+        index += 1;
+      }
+ 
+      if (skip)
+      {
+        continue;
+      }
+
       if (!first_action)
       {
-        stream << " . ";
+        stream << " . tau* . ";
+      }
+      else
+      {
+        stream << "tau* . ";
+        first_action = false;
       }
 
       stream << action;
+    }
 
-      first_action = false;
+    // Deal with the empty case.
+    if (first_action)
+    {
+      stream << "tau*";
+    }
+    else
+    {
+      // We also need to stutter after the last action.
+      stream << " . tau*";
     }
 
     stream << ">(";
@@ -213,6 +252,30 @@ write_counter_example(std::ostream& stream, const trace& initial_trace, const st
     bool first_action = true;
     for (const auto& action : inner_trace.actions())
     {
+      // The trace interface is just completely messed up, and does not relate to the LTS hidden map at all.
+      bool skip = false;
+      std::size_t index = 0;
+      for (const auto& label: lts.action_labels())
+      {
+        if (mcrl2::lps::multi_action(mcrl2::process::action(
+                                mcrl2::process::action_label(
+                                       core::identifier_string(mcrl2::lts::pp(label)),
+                                       mcrl2::data::sort_expression_list()),
+                                mcrl2::data::data_expression_list())) == action)
+        {
+          if (lts.is_tau(lts.apply_hidden_label_map(index)))
+          {
+            skip = true;
+          }
+        }
+        index += 1;      
+      }
+ 
+      if (skip)
+      {
+        continue;
+      }
+
       if (!first_action)
       {
         stream << " . tau* . ";
@@ -274,7 +337,6 @@ bool destructive_impossible_futures(LTS& l1,
 
   std::size_t init_l2 = l2.initial_state() + l1.num_states();
   mcrl2::lts::detail::merge(l1, l2);
-  // l1.save("merged.aut"); 
 
   const detail::lts_cache<LTS> weak_property_cache(l1, true);
 
@@ -349,7 +411,7 @@ bool destructive_impossible_futures(LTS& l1,
         // Construct the counter example.
         if (structured_output)
         {
-          write_counter_example(std::cout,
+          write_counter_example(l1, std::cout,
               ce_constructor.get_trace(l1, front.counter_example_index()),
               inner_counter_examples);
         }
@@ -361,7 +423,7 @@ bool destructive_impossible_futures(LTS& l1,
             throw mcrl2::runtime_error("Could not open file " + counter_example_file);
           }
 
-          write_counter_example(file,
+          write_counter_example(l1, file,
               ce_constructor.get_trace(l1, front.counter_example_index()),
               inner_counter_examples);
         }
@@ -404,7 +466,7 @@ bool destructive_impossible_futures(LTS& l1,
           // Construct the counter example.
           if (structured_output)
           {
-            write_counter_example(std::cout,
+            write_counter_example(l1, std::cout,
                 ce_constructor.get_trace(l1, new_counterexample_index),
                 std::vector<trace>());
           }
@@ -416,7 +478,7 @@ bool destructive_impossible_futures(LTS& l1,
               throw mcrl2::runtime_error("Could not open file " + counter_example_file);
             }
 
-            write_counter_example(file,
+            write_counter_example(l1, file,
                 ce_constructor.get_trace(l1, new_counterexample_index),
                 std::vector<trace>());
           }

@@ -21,7 +21,7 @@ class ClusterStatePositioner
     ClusterStatePositioner(Cluster* c);
 
     virtual ~ClusterStatePositioner()
-    { }
+    = default;
 
     virtual void positionStates()
     { }
@@ -42,18 +42,18 @@ class NodeClusterStatePositioner: public ClusterStatePositioner
 {
   public:
     NodeClusterStatePositioner(Cluster* c):
-      ClusterStatePositioner(c), slot_rtree(NULL)
+      ClusterStatePositioner(c) 
     { }
 
-    ~NodeClusterStatePositioner();
-    void positionStates();
+    ~NodeClusterStatePositioner() override;
+    void positionStates() override;
 
   private:
     void assignStateToNearestSlot(State* state, const QVector2D& position);
     void buildRTree();
     QVector2D sumSuccessorStateVectors(State* state);
 
-    RTree* slot_rtree;
+    RTree* slot_rtree = nullptr;
 };
 
 
@@ -64,10 +64,10 @@ class LeafClusterStatePositioner: public ClusterStatePositioner
       ClusterStatePositioner(c)
     { }
 
-    ~LeafClusterStatePositioner()
-    { }
+    ~LeafClusterStatePositioner() override
+    = default;
 
-    void positionStates();
+    void positionStates() override;
 
   private:
     void computeNumRingStates();
@@ -98,7 +98,7 @@ ClusterStatePositioner::ClusterStatePositioner(Cluster* c):
 
 NodeClusterStatePositioner::~NodeClusterStatePositioner()
 {
-  if (slot_rtree != NULL)
+  if (slot_rtree != nullptr)
   {
     delete slot_rtree;
   }
@@ -120,12 +120,12 @@ void NodeClusterStatePositioner::buildRTree()
   PackedRTreeBuilder rtree_builder = PackedRTreeBuilder();
   for (std::size_t ring = 0; ring < num_ring_slots.size(); ++ring)
   {
-    float radius = ring * delta_ring;
+    float radius = static_cast<float>(ring) * delta_ring;
     int num_slots = num_ring_slots[ring];
     float delta_deg = 360.0f / static_cast<float>(num_slots);
     for (int slot = 0; slot < num_slots; ++slot)
     {
-      rtree_builder.addPoint(Vectors::fromPolar(delta_deg * slot, radius));
+      rtree_builder.addPoint(Vectors::fromPolar(delta_deg * static_cast<float>(slot), radius));
     }
   }
   rtree_builder.buildRTree();
@@ -198,7 +198,7 @@ void LeafClusterStatePositioner::positionStates()
   }
   for (std::size_t ring = 1; ring < num_ring_states.size(); ++ring)
   {
-    float radius = delta_ring * ring;
+    float radius = delta_ring * static_cast<float>(ring);
     int num_states = num_ring_states[ring];
     float delta_deg = 360.0f / static_cast<float>(num_states);
     float angle = (ring % 2 == 1) ? 0.0f : 0.5f * delta_deg;
@@ -215,9 +215,9 @@ void LeafClusterStatePositioner::positionStates()
 void LeafClusterStatePositioner::computeNumRingStates()
 {
   int total_slots = 0;
-  for (std::size_t ring = 0; ring < num_ring_slots.size(); ++ring)
+  for (int slots_in_ring : num_ring_slots)
   {
-    total_slots += num_ring_slots[ring];
+    total_slots += slots_in_ring;
   }
   int todo_states = cluster->getNumStates();
   num_ring_states.assign(num_ring_slots.size(), 0);
@@ -231,7 +231,7 @@ void LeafClusterStatePositioner::computeNumRingStates()
     {
       float rel_slots = static_cast<float>(num_ring_slots[ring]) /
                         static_cast<float>(total_slots);
-      int num_states = MathUtils::round_to_int(cluster->getNumStates() *
+      int num_states = MathUtils::round_to_int(static_cast<float>(cluster->getNumStates()) *
                        rel_slots);
       num_ring_states[ring] = num_states;
       todo_states -= num_states;
@@ -246,8 +246,7 @@ SinglePassStatePositioner::SinglePassStatePositioner(LTS* l)
 }
 
 SinglePassStatePositioner::~SinglePassStatePositioner()
-{
-}
+= default;
 
 void SinglePassStatePositioner::positionStates()
 {

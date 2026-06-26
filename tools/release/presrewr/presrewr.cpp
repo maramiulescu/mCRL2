@@ -42,7 +42,6 @@ class pres_rewriter : public pres_input_tool<pres_output_tool<pres_rewriter_tool
     std::set<pres_system::pres_rewriter_type> available_rewriters() const override
     {
       std::set<pres_system::pres_rewriter_type> result = super::available_rewriters();
-      // result.insert(pres_system::quantifier_one_point);
       return result;
     }
 
@@ -79,22 +78,19 @@ class pres_rewriter : public pres_input_tool<pres_output_tool<pres_rewriter_tool
       {
         case simplify:
         {
-          // simplify_quantifiers_data_rewriter<data::rewriter> presr(datar);
           simplify_data_rewriter<data::rewriter> presr(p.data(), datar);
           pres_rewrite(p, presr);
           break;
         }
         case quantifier_all:
         {
-          bool enumerate_infinite_sorts = true;
-          enumerate_quantifiers_rewriter presr(datar, p.data(), enumerate_infinite_sorts);
+          enumerate_quantifiers_rewriter presr(datar, p.data(), pbes_system::expand_infinite_sorts);
           pres_rewrite(p, presr);
           break;
         }
         case quantifier_finite:
         {
-          bool enumerate_infinite_sorts = false;
-          enumerate_quantifiers_rewriter presr(datar, p.data(), enumerate_infinite_sorts);
+          enumerate_quantifiers_rewriter presr(datar, p.data(), pbes_system::expand_finite_sorts);
           pres_rewrite(p, presr);
           break;
         }
