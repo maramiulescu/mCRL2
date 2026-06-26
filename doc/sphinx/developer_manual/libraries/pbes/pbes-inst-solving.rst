@@ -24,8 +24,8 @@ A structure graph, see [KRW12]_, is a graph structure that captures BESs in thei
 
 .. definition:: Structure graph
 
-    A structure graph is a tuple `(V,E,d,r)` with `V` a set of nodes containing proposition variables, `E \subseteq V \times V` a set of edges, `r:V\rightarrow \mathbb{N}` a partial function that assigns a rank to each node, and `d:V\rightarrow \{\blacktriangle ,\blacktriangledown ,\top ,\bot \}` a partial function that assigns a decoration to each node. 
-    A structure graph is formally defined using the following SOS rules, where `\mathtt{B}` is the BES and `\bnd(\mathtt{B})` its bound proposition variables, `X` is proposition variable, `f,f',g,g'` are proposition formulae and `\sigma \in \{\mu, \nu\}` is the fixpoint:
+    A structure graph is a tuple `(V,\rightarrow,d,r)` with `V` a set of nodes containing proposition variables, `\rightarrow \subseteq V \times V` a set of edges, `r:V\rightarrow \mathbb{N}` a partial function that assigns a rank, and `d:V\rightarrow \{\blacktriangle ,\blacktriangledown ,\top ,\bot \}` a partial function that assigns a decoration. 
+    A structure graph is formally defined using the following SOS rules, where `\mathtt{B}` is the BES and `\bnd(\mathtt{B})` its bound proposition variables, `X` is a proposition variable, `f,f',g,g'` are proposition formulae and `\sigma \in \{\mu, \nu\}` is the fixpoint:
 
     .. math::
         :nowrap:
@@ -101,13 +101,14 @@ A structure graph, see [KRW12]_, is a graph structure that captures BESs in thei
             \end{cases}
             \end{equation*}
 
-In the implementation, each proposition variable (BES variables) is replaced by a propositional variable instantiation (PVI). A PVI is a predicate variable instantiation, i.e., given a predicate formula `\varphi`, an occurrence `Y(e)` in `\varphi` is a PVI. In the implementation, the nodes of the structure graphs are PVIs.
-
+The right hand sides of the PBES may contain propositional variable instantiations (PVI). Given a predicate formula `\varphi`, an occurrence `Y(e)` in `\varphi` is a PVI. In the implementation of the structure graph, the vertices are proposition variables `Y_e` which correspond to PVIs `Y(e)`.
 
 Attractor sets
 """"""""""""""
 
-Let `A \subseteq V` be a subset of vertices of a structure graph `G = (V, E, d , r)`. We define Algorithm :ref:`AttrDefault <attr>` to compute the attractor set of A. The value `\alpha = 0` corresponds with disjunction (`\blacktriangledown`) and `\alpha = 1` corresponds with conjunction (`\blacktriangle`), i.e. the decoration of `u` is `\blacktriangledown` if `d_u = 0`. 
+Let `A \subseteq V` be a subset of vertices of a structure graph `G = (V, \rightarrow, d , r)`. Although we are not explicitly solving a parity game, we can think of `G` as a parity game to understand attractor sets. Suppose there is an area in `G` (a set of vertices `A`) where player `\alpha` has a winning strategy from every vertex, and furthermore `\alpha` can force the token to stay in `A`. Then intuitively, the attractor set of `(A,\alpha)` will capture those vertices in `V\setminus A` from which the token can be forced to move into `A`.
+
+We define Algorithm :ref:`AttrDefault <attr>` to compute the attractor set of `A`, where the value `\alpha = 0` corresponds with disjunction (`\blacktriangledown`) and `\alpha = 1` corresponds with conjunction (`\blacktriangle`), i.e. the decoration of `u` is `\blacktriangledown` if `d_u = 0`, and `\pred(v) = \{u \in V | (u,v) \in \rightarrow\}` and `\scc(u) = \{v \in V | (u,v) \in \rightarrow\}`. The algorithm returns the attractor set of `(A,\alpha)`. As a side effect a mapping `\tau` is produced that corresponds to a winning strategy.
 
 .. _attr:
 
@@ -132,8 +133,6 @@ Let `A \subseteq V` be a subset of vertices of a structure graph `G = (V, E, d ,
     \State \Return {$A$}
     \EndFunction
     \end{algorithmic}
-
-where, `\pred(v) = \{u \in V | (u,v) \in E\}` and `\scc(u) = \{v \in V | (u,v) \in E\}`. The algorithm returns, for player `\alpha`, the attractor set `A`. As a side effect a mapping `\tau` is produced that corresponds to a winning strategy.
 
 The algorithm is extended in Algorithm :ref:`AttrDefaultWithTau <attr-tau>` such that in addition it sets a local strategy in the mapping `\tau_\alpha`.
 
